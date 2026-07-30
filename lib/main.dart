@@ -14,8 +14,41 @@ class PocketMedicApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF0D9488)),
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: const Color(0xFF0F766E),
+          surface: const Color(0xFFF8FAFC),
+        ),
         scaffoldBackgroundColor: const Color(0xFFF8FAFC),
+        textTheme: const TextTheme(
+          headlineLarge: TextStyle(
+            fontFamily: 'Plus Jakarta Sans',
+            fontWeight: FontWeight.w700,
+            color: Color(0xFF0F172A),
+          ),
+          titleLarge: TextStyle(
+            fontFamily: 'Plus Jakarta Sans',
+            fontWeight: FontWeight.w600,
+            color: Color(0xFF0F172A),
+          ),
+          bodyLarge: TextStyle(
+            fontFamily: 'Inter',
+            fontWeight: FontWeight.w500,
+            color: Color(0xFF0F172A),
+          ),
+          bodyMedium: TextStyle(
+            fontFamily: 'Inter',
+            fontWeight: FontWeight.w400,
+            color: Color(0xFF0F172A),
+          ),
+        ),
+        cardTheme: CardThemeData(
+          elevation: 0,
+          color: const Color(0xFFFFFFFF),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: const BorderSide(color: Color(0xFFF1F5F9), width: 1),
+          ),
+        ),
       ),
       home: const MainShell(),
     );
@@ -59,8 +92,16 @@ class _MainShellState extends State<MainShell> {
   }
 }
 
-class DashboardScreen extends StatelessWidget {
+class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
+
+  @override
+  State<DashboardScreen> createState() => _DashboardScreenState();
+}
+
+class _DashboardScreenState extends State<DashboardScreen> {
+  bool _modelLoading = true;
+  final List<String> _recentCases = const [];
 
   @override
   Widget build(BuildContext context) {
@@ -68,121 +109,273 @@ class DashboardScreen extends StatelessWidget {
       child: ListView(
         padding: const EdgeInsets.all(16),
         children: [
+          const SizedBox(height: 16),
           const Text(
             'Pocket Medic',
-            style: TextStyle(fontSize: 28, fontWeight: FontWeight.w900),
+            style: TextStyle(
+              fontFamily: 'Plus Jakarta Sans',
+              fontWeight: FontWeight.w700,
+              fontSize: 28,
+              color: Color(0xFF0F172A),
+            ),
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: 8),
           const Text(
             'Offline first-aid triage assistant',
-            style: TextStyle(color: Color(0xFF475569), fontWeight: FontWeight.w600),
+            style: TextStyle(
+              fontFamily: 'Inter',
+              fontWeight: FontWeight.w500,
+              fontSize: 14,
+              color: Color(0xFF0F172A),
+            ),
           ),
           const SizedBox(height: 16),
           Card(
-            elevation: 0,
-            color: const Color(0xFFECFDF5),
             child: const Padding(
               padding: EdgeInsets.all(16),
               child: Row(
                 children: [
-                  Icon(Icons.wifi_off, color: Color(0xFF047857)),
-                  SizedBox(width: 10),
+                  Icon(Icons.wifi_off, color: Color(0xFF0F766E)),
+                  SizedBox(width: 8),
                   Expanded(
                     child: Text(
                       'Offline Mode Active: No internet required in this demo flow.',
-                      style: TextStyle(fontWeight: FontWeight.w700),
+                      style: TextStyle(
+                        fontFamily: 'Inter',
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                        color: Color(0xFF0F172A),
+                      ),
                     ),
                   ),
                 ],
               ),
             ),
           ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: FilledButton.icon(
-                  onPressed: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(builder: (_) => const TriageInputStandalone()),
-                    );
-                  },
-                  icon: const Icon(Icons.play_arrow),
-                  label: const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 14),
-                    child: Text('Start Triage'),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(builder: (_) => const EmergencyScreen()),
-                    );
-                  },
-                  icon: const Icon(Icons.call),
-                  label: const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 12),
-                    child: Text('Emergency Actions'),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(builder: (_) => const HospitalLocatorScreen()),
-                    );
-                  },
-                  icon: const Icon(Icons.place_outlined),
-                  label: const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 12),
-                    child: Text('Hospitals'),
-                  ),
-                ),
-              ),
-            ],
-          ),
           const SizedBox(height: 16),
+          SizedBox(
+            height: 48,
+            child: FilledButton.icon(
+              style: FilledButton.styleFrom(
+                backgroundColor: const Color(0xFF0F766E),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              ),
+              onPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const TriageInputStandalone()),
+                );
+              },
+              icon: const Icon(Icons.play_arrow),
+              label: const Text(
+                'Start Triage',
+                style: TextStyle(
+                  fontFamily: 'Inter',
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Expanded(
+                child: SizedBox(
+                  height: 48,
+                  child: OutlinedButton.icon(
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: Color(0xFFF1F5F9), width: 1),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    ),
+                    onPressed: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(builder: (_) => const EmergencyScreen()),
+                      );
+                    },
+                    icon: const Icon(Icons.call, color: Color(0xFF0F172A)),
+                    label: const Text(
+                      'Emergency',
+                      style: TextStyle(
+                        fontFamily: 'Inter',
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF0F172A),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: SizedBox(
+                  height: 48,
+                  child: OutlinedButton.icon(
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: Color(0xFFF1F5F9), width: 1),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    ),
+                    onPressed: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(builder: (_) => const HospitalLocatorScreen()),
+                      );
+                    },
+                    icon: const Icon(Icons.place_outlined, color: Color(0xFF0F172A)),
+                    label: const Text(
+                      'Hospitals',
+                      style: TextStyle(
+                        fontFamily: 'Inter',
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF0F172A),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
           const Text(
-            'Today quick actions',
-            style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
+            'Model status',
+            style: TextStyle(
+              fontFamily: 'Plus Jakarta Sans',
+              fontWeight: FontWeight.w600,
+              fontSize: 16,
+              color: Color(0xFF0F172A),
+            ),
           ),
-          const SizedBox(height: 10),
-          _tile(
-            icon: Icons.bloodtype_outlined,
-            title: 'Bleeding control',
-            subtitle: 'Pressure, elevation, seek help signals',
+          const SizedBox(height: 8),
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: _modelLoading
+                  ? Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Preparing offline model...',
+                          style: TextStyle(
+                            fontFamily: 'Inter',
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF0F172A),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        const LinearProgressIndicator(
+                          minHeight: 6,
+                          color: Color(0xFF0F766E),
+                          backgroundColor: Color(0xFFF1F5F9),
+                        ),
+                        const SizedBox(height: 8),
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: TextButton(
+                            onPressed: () => setState(() => _modelLoading = false),
+                            child: const Text(
+                              'Mark ready',
+                              style: TextStyle(
+                                fontFamily: 'Inter',
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFF0F766E),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    )
+                  : const Row(
+                      children: [
+                        Icon(Icons.check_circle_outline, color: Color(0xFF0F766E)),
+                        SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Model ready for on-device triage',
+                            style: TextStyle(
+                              fontFamily: 'Inter',
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF0F172A),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+            ),
           ),
-          _tile(
-            icon: Icons.local_fire_department_outlined,
-            title: 'Burn first aid',
-            subtitle: 'Cool water, cover, when to escalate',
+          const SizedBox(height: 24),
+          const Text(
+            'Recent triage',
+            style: TextStyle(
+              fontFamily: 'Plus Jakarta Sans',
+              fontWeight: FontWeight.w600,
+              fontSize: 16,
+              color: Color(0xFF0F172A),
+            ),
           ),
-          _tile(
-            icon: Icons.sports_handball_outlined,
-            title: 'Sprain care',
-            subtitle: 'Rest, ice, compression, elevation',
+          const SizedBox(height: 8),
+          if (_recentCases.isEmpty)
+            Card(
+              child: const Padding(
+                padding: EdgeInsets.all(16),
+                child: Row(
+                  children: [
+                    Icon(Icons.inbox_outlined, color: Color(0xFF0F172A)),
+                    SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'No triage history yet. Run your first case from Triage.',
+                        style: TextStyle(
+                          fontFamily: 'Inter',
+                          fontWeight: FontWeight.w500,
+                          color: Color(0xFF0F172A),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          const SizedBox(height: 24),
+          const Text(
+            'Quick guides',
+            style: TextStyle(
+              fontFamily: 'Plus Jakarta Sans',
+              fontWeight: FontWeight.w600,
+              fontSize: 16,
+              color: Color(0xFF0F172A),
+            ),
           ),
+          const SizedBox(height: 8),
+          _guideRow(icon: Icons.bloodtype_outlined, title: 'Bleeding control'),
+          const SizedBox(height: 8),
+          _guideRow(icon: Icons.local_fire_department_outlined, title: 'Burn first aid'),
+          const SizedBox(height: 8),
+          _guideRow(icon: Icons.sports_handball_outlined, title: 'Sprain care'),
+          const SizedBox(height: 16),
         ],
       ),
     );
   }
 
-  Widget _tile({required IconData icon, required String title, required String subtitle}) {
+  Widget _guideRow({required IconData icon, required String title}) {
     return Card(
-      elevation: 0,
-      child: ListTile(
-        leading: Icon(icon, color: const Color(0xFF0F766E)),
-        title: Text(title, style: const TextStyle(fontWeight: FontWeight.w700)),
-        subtitle: Text(subtitle),
+      child: SizedBox(
+        height: 56,
+        child: Row(
+          children: [
+            const SizedBox(width: 16),
+            Icon(icon, color: const Color(0xFF0F766E)),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                title,
+                style: const TextStyle(
+                  fontFamily: 'Inter',
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF0F172A),
+                ),
+              ),
+            ),
+            const Icon(Icons.chevron_right, color: Color(0xFF0F172A)),
+            const SizedBox(width: 16),
+          ],
+        ),
       ),
     );
   }

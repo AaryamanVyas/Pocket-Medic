@@ -1,0 +1,13 @@
+# Offline OSM PBF → SQLite pipeline
+#
+# Primary dependency: pyosmium (efficient .osm.pbf reader).
+#
+# Windows note:
+#   Official pip wheels are often missing for Windows.
+#   Prefer one of:
+#     1) WSL2 (Ubuntu): pip install -r requirements.txt
+#     2) conda-forge:   conda install -c conda-forge pyosmium
+#   Query helpers (find_nearby / reverse_geocode) only need the stdlib + an
+#   already-built SQLite file — pyosmium is required only for PBF import.
+
+pyosmium>=3.6.0

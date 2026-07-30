@@ -1,24 +1,25 @@
 # Pocket Medic (Round 1 UI Demo)
 
-UI-first Flutter prototype for an offline first-aid triage app.
+Offline field assistant UI for medical, food/edibility, water, wildlife, and places guidance.
 
 ## What this demo shows
 
-- Home screen with offline-first story
-- Symptom text input
-- Mock image attach toggle
-- Triage output screen with:
-  - severity badge
-  - likely issue
-  - immediate first-aid steps
-  - seek-help flag
-  - safety disclaimer
+- Home with flexible topic cards (Medical / Food / Water / Wildlife / Locate)
+- Ask flow with topic picker, sample prompts, mock image + voice stubs
+- Result screen with urgency + recommended steps
+- Field Guides (food, water, wildlife, locate, first aid)
+- Places stub (hospital, town, water markers)
+- Local ask history (in-memory mock)
 
 ## Current status
 
-This is a **UI + mocked logic** base for quick hackathon presentation.
-No real model inference is wired yet.
+UI + mocked offline logic only. No real model inference wired yet.
 
-## Next integration step
+## Run
 
-Replace `MockTriageResponse.fromInput(...)` in `lib/main.dart` with real Gemma/llama.cpp output parsing.
+```bash
+flutter pub get
+flutter run
+```
+
+Press `R` in the Flutter terminal after big UI changes for a hot restart.

@@ -1,0 +1,23 @@
+# Offline OSM → SQLite for Pocket Medic
+#
+# Completely offline. No Overpass, no Nominatim, no network APIs.
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "osm-offline"
+version = "1.0.0"
+description = "Convert OSM PBF extracts into a survival-focused offline SQLite database"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+  "pyosmium>=3.6.0",
+]
+
+[project.scripts]
+osm-offline = "osm_offline.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["osm_offline*"]

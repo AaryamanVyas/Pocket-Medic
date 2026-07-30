@@ -1,0 +1,13 @@
+# Generated / local data — keep PBF and SQLite out of git if large
+data/
+*.osm.pbf
+*.pbf
+*.sqlite
+*.db
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.env
+.pytest_cache/
+.mypy_cache/

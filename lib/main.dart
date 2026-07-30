@@ -4,6 +4,126 @@ void main() {
   runApp(const PocketMedicApp());
 }
 
+/// Shared design tokens (strict 8px grid + limited palette).
+class AppTokens {
+  static const surface = Color(0xFFF8FAFC);
+  static const text = Color(0xFF0F172A);
+  static const accent = Color(0xFF0F766E);
+  static const border = Color(0xFFF1F5F9);
+  static const radius = 16.0;
+
+  static const heading = TextStyle(
+    fontFamily: 'Plus Jakarta Sans',
+    fontWeight: FontWeight.w700,
+    color: text,
+  );
+  static const title = TextStyle(
+    fontFamily: 'Plus Jakarta Sans',
+    fontWeight: FontWeight.w600,
+    color: text,
+  );
+  static const body = TextStyle(
+    fontFamily: 'Inter',
+    fontWeight: FontWeight.w500,
+    color: text,
+  );
+  static const bodyRegular = TextStyle(
+    fontFamily: 'Inter',
+    fontWeight: FontWeight.w400,
+    color: text,
+  );
+}
+
+enum AskCategory {
+  medical,
+  food,
+  water,
+  wildlife,
+  locate,
+}
+
+extension AskCategoryX on AskCategory {
+  String get label {
+    switch (this) {
+      case AskCategory.medical:
+        return 'Medical';
+      case AskCategory.food:
+        return 'Food';
+      case AskCategory.water:
+        return 'Water';
+      case AskCategory.wildlife:
+        return 'Wildlife';
+      case AskCategory.locate:
+        return 'Locate';
+    }
+  }
+
+  String get shortHint {
+    switch (this) {
+      case AskCategory.medical:
+        return 'Injury / first aid';
+      case AskCategory.food:
+        return 'Is this edible?';
+      case AskCategory.water:
+        return 'Find water nearby';
+      case AskCategory.wildlife:
+        return 'Animals & safety';
+      case AskCategory.locate:
+        return 'Town / hospital';
+    }
+  }
+
+  IconData get icon {
+    switch (this) {
+      case AskCategory.medical:
+        return Icons.medical_services_outlined;
+      case AskCategory.food:
+        return Icons.eco_outlined;
+      case AskCategory.water:
+        return Icons.water_drop_outlined;
+      case AskCategory.wildlife:
+        return Icons.pets_outlined;
+      case AskCategory.locate:
+        return Icons.place_outlined;
+    }
+  }
+
+  List<String> get samplePrompts {
+    switch (this) {
+      case AskCategory.medical:
+        return [
+          'Deep cut on palm, steady bleeding',
+          'Minor burn from hot pan',
+          'Ankle twist with swelling',
+        ];
+      case AskCategory.food:
+        return [
+          'Is this berry edible?',
+          'Can I eat these mushrooms?',
+          'Is this plant safe to forage?',
+        ];
+      case AskCategory.water:
+        return [
+          'How do I find a water source nearby?',
+          'Is this stream water safe?',
+          'How to purify cloudy water offline?',
+        ];
+      case AskCategory.wildlife:
+        return [
+          'Snake nearby — what should I do?',
+          'How to avoid attracting bears?',
+          'Animal tracks near camp — tips?',
+        ];
+      case AskCategory.locate:
+        return [
+          'Nearest hospital from here',
+          'Nearest town or city',
+          'Safe route toward settlement',
+        ];
+    }
+  }
+}
+
 class PocketMedicApp extends StatelessWidget {
   const PocketMedicApp({super.key});
 
@@ -15,38 +135,22 @@ class PocketMedicApp extends StatelessWidget {
       theme: ThemeData(
         useMaterial3: true,
         colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF0F766E),
-          surface: const Color(0xFFF8FAFC),
+          seedColor: AppTokens.accent,
+          surface: AppTokens.surface,
         ),
-        scaffoldBackgroundColor: const Color(0xFFF8FAFC),
+        scaffoldBackgroundColor: AppTokens.surface,
         textTheme: const TextTheme(
-          headlineLarge: TextStyle(
-            fontFamily: 'Plus Jakarta Sans',
-            fontWeight: FontWeight.w700,
-            color: Color(0xFF0F172A),
-          ),
-          titleLarge: TextStyle(
-            fontFamily: 'Plus Jakarta Sans',
-            fontWeight: FontWeight.w600,
-            color: Color(0xFF0F172A),
-          ),
-          bodyLarge: TextStyle(
-            fontFamily: 'Inter',
-            fontWeight: FontWeight.w500,
-            color: Color(0xFF0F172A),
-          ),
-          bodyMedium: TextStyle(
-            fontFamily: 'Inter',
-            fontWeight: FontWeight.w400,
-            color: Color(0xFF0F172A),
-          ),
+          headlineLarge: AppTokens.heading,
+          titleLarge: AppTokens.title,
+          bodyLarge: AppTokens.body,
+          bodyMedium: AppTokens.bodyRegular,
         ),
         cardTheme: CardThemeData(
           elevation: 0,
-          color: const Color(0xFFFFFFFF),
+          color: Colors.white,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-            side: const BorderSide(color: Color(0xFFF1F5F9), width: 1),
+            borderRadius: BorderRadius.circular(AppTokens.radius),
+            side: const BorderSide(color: AppTokens.border, width: 1),
           ),
         ),
       ),
@@ -64,25 +168,48 @@ class MainShell extends StatefulWidget {
 
 class _MainShellState extends State<MainShell> {
   int _index = 0;
-
-  final List<Widget> _pages = const [
-    DashboardScreen(),
-    TriageInputScreen(),
-    FirstAidGuidesScreen(),
-    HistoryScreen(),
-    SettingsScreen(),
-  ];
+  AskCategory? _preselect;
 
   @override
   Widget build(BuildContext context) {
+    final pages = [
+      DashboardScreen(
+        onOpenAsk: (category) {
+          setState(() {
+            _preselect = category;
+            _index = 1;
+          });
+        },
+        onOpenPlaces: () {
+          Navigator.of(context).push(
+            MaterialPageRoute(builder: (_) => const PlacesLocatorScreen()),
+          );
+        },
+        onOpenEmergency: () {
+          Navigator.of(context).push(
+            MaterialPageRoute(builder: (_) => const EmergencyScreen()),
+          );
+        },
+      ),
+      AskScreen(initialCategory: _preselect),
+      FieldGuidesScreen(),
+      HistoryScreen(),
+      SettingsScreen(),
+    ];
+
     return Scaffold(
-      body: _pages[_index],
+      body: pages[_index],
       bottomNavigationBar: NavigationBar(
         selectedIndex: _index,
-        onDestinationSelected: (value) => setState(() => _index = value),
+        onDestinationSelected: (value) {
+          setState(() {
+            _index = value;
+            if (value != 1) _preselect = null;
+          });
+        },
         destinations: const [
           NavigationDestination(icon: Icon(Icons.home_outlined), label: 'Home'),
-          NavigationDestination(icon: Icon(Icons.medical_services_outlined), label: 'Triage'),
+          NavigationDestination(icon: Icon(Icons.chat_bubble_outline), label: 'Ask'),
           NavigationDestination(icon: Icon(Icons.menu_book_outlined), label: 'Guides'),
           NavigationDestination(icon: Icon(Icons.history), label: 'History'),
           NavigationDestination(icon: Icon(Icons.settings_outlined), label: 'Settings'),
@@ -93,7 +220,16 @@ class _MainShellState extends State<MainShell> {
 }
 
 class DashboardScreen extends StatefulWidget {
-  const DashboardScreen({super.key});
+  final void Function(AskCategory category) onOpenAsk;
+  final VoidCallback onOpenPlaces;
+  final VoidCallback onOpenEmergency;
+
+  const DashboardScreen({
+    super.key,
+    required this.onOpenAsk,
+    required this.onOpenPlaces,
+    required this.onOpenEmergency,
+  });
 
   @override
   State<DashboardScreen> createState() => _DashboardScreenState();
@@ -101,7 +237,6 @@ class DashboardScreen extends StatefulWidget {
 
 class _DashboardScreenState extends State<DashboardScreen> {
   bool _modelLoading = true;
-  final List<String> _recentCases = const [];
 
   @override
   Widget build(BuildContext context) {
@@ -116,35 +251,35 @@ class _DashboardScreenState extends State<DashboardScreen> {
               fontFamily: 'Plus Jakarta Sans',
               fontWeight: FontWeight.w700,
               fontSize: 28,
-              color: Color(0xFF0F172A),
+              color: AppTokens.text,
             ),
           ),
           const SizedBox(height: 8),
           const Text(
-            'Offline first-aid triage assistant',
+            'Offline field assistant — medical, food, water, wildlife, and places.',
             style: TextStyle(
               fontFamily: 'Inter',
               fontWeight: FontWeight.w500,
               fontSize: 14,
-              color: Color(0xFF0F172A),
+              color: AppTokens.text,
             ),
           ),
           const SizedBox(height: 16),
-          Card(
-            child: const Padding(
+          const Card(
+            child: Padding(
               padding: EdgeInsets.all(16),
               child: Row(
                 children: [
-                  Icon(Icons.wifi_off, color: Color(0xFF0F766E)),
+                  Icon(Icons.wifi_off, color: AppTokens.accent),
                   SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      'Offline Mode Active: No internet required in this demo flow.',
+                      'Offline Mode Active: guidance runs on-device with no network.',
                       style: TextStyle(
                         fontFamily: 'Inter',
                         fontWeight: FontWeight.w600,
                         fontSize: 14,
-                        color: Color(0xFF0F172A),
+                        color: AppTokens.text,
                       ),
                     ),
                   ),
@@ -157,21 +292,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
             height: 48,
             child: FilledButton.icon(
               style: FilledButton.styleFrom(
-                backgroundColor: const Color(0xFF0F766E),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-              ),
-              onPressed: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(builder: (_) => const TriageInputStandalone()),
-                );
-              },
-              icon: const Icon(Icons.play_arrow),
-              label: const Text(
-                'Start Triage',
-                style: TextStyle(
-                  fontFamily: 'Inter',
-                  fontWeight: FontWeight.w600,
+                backgroundColor: AppTokens.accent,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(AppTokens.radius),
                 ),
+              ),
+              onPressed: () => widget.onOpenAsk(AskCategory.medical),
+              icon: const Icon(Icons.chat_bubble_outline),
+              label: const Text(
+                'Ask anything offline',
+                style: TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.w600),
               ),
             ),
           ),
@@ -182,22 +312,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 child: SizedBox(
                   height: 48,
                   child: OutlinedButton.icon(
-                    style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: Color(0xFFF1F5F9), width: 1),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                    ),
-                    onPressed: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(builder: (_) => const EmergencyScreen()),
-                      );
-                    },
-                    icon: const Icon(Icons.call, color: Color(0xFF0F172A)),
+                    style: _outlineStyle(),
+                    onPressed: widget.onOpenEmergency,
+                    icon: const Icon(Icons.call, color: AppTokens.text),
                     label: const Text(
                       'Emergency',
                       style: TextStyle(
                         fontFamily: 'Inter',
                         fontWeight: FontWeight.w600,
-                        color: Color(0xFF0F172A),
+                        color: AppTokens.text,
                       ),
                     ),
                   ),
@@ -208,22 +331,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 child: SizedBox(
                   height: 48,
                   child: OutlinedButton.icon(
-                    style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: Color(0xFFF1F5F9), width: 1),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                    ),
-                    onPressed: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(builder: (_) => const HospitalLocatorScreen()),
-                      );
-                    },
-                    icon: const Icon(Icons.place_outlined, color: Color(0xFF0F172A)),
+                    style: _outlineStyle(),
+                    onPressed: widget.onOpenPlaces,
+                    icon: const Icon(Icons.place_outlined, color: AppTokens.text),
                     label: const Text(
-                      'Hospitals',
+                      'Places',
                       style: TextStyle(
                         fontFamily: 'Inter',
                         fontWeight: FontWeight.w600,
-                        color: Color(0xFF0F172A),
+                        color: AppTokens.text,
                       ),
                     ),
                   ),
@@ -233,12 +349,27 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
           const SizedBox(height: 24),
           const Text(
+            'What do you need?',
+            style: TextStyle(
+              fontFamily: 'Plus Jakarta Sans',
+              fontWeight: FontWeight.w600,
+              fontSize: 16,
+              color: AppTokens.text,
+            ),
+          ),
+          const SizedBox(height: 8),
+          for (final c in AskCategory.values) ...[
+            _categoryCard(c),
+            const SizedBox(height: 8),
+          ],
+          const SizedBox(height: 16),
+          const Text(
             'Model status',
             style: TextStyle(
               fontFamily: 'Plus Jakarta Sans',
               fontWeight: FontWeight.w600,
               fontSize: 16,
-              color: Color(0xFF0F172A),
+              color: AppTokens.text,
             ),
           ),
           const SizedBox(height: 8),
@@ -254,14 +385,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           style: TextStyle(
                             fontFamily: 'Inter',
                             fontWeight: FontWeight.w600,
-                            color: Color(0xFF0F172A),
+                            color: AppTokens.text,
                           ),
                         ),
                         const SizedBox(height: 8),
                         const LinearProgressIndicator(
                           minHeight: 6,
-                          color: Color(0xFF0F766E),
-                          backgroundColor: Color(0xFFF1F5F9),
+                          color: AppTokens.accent,
+                          backgroundColor: AppTokens.border,
                         ),
                         const SizedBox(height: 8),
                         Align(
@@ -273,7 +404,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               style: TextStyle(
                                 fontFamily: 'Inter',
                                 fontWeight: FontWeight.w600,
-                                color: Color(0xFF0F766E),
+                                color: AppTokens.accent,
                               ),
                             ),
                           ),
@@ -282,15 +413,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     )
                   : const Row(
                       children: [
-                        Icon(Icons.check_circle_outline, color: Color(0xFF0F766E)),
+                        Icon(Icons.check_circle_outline, color: AppTokens.accent),
                         SizedBox(width: 8),
                         Expanded(
                           child: Text(
-                            'Model ready for on-device triage',
+                            'Model ready for on-device field guidance',
                             style: TextStyle(
                               fontFamily: 'Inter',
                               fontWeight: FontWeight.w600,
-                              color: Color(0xFF0F172A),
+                              color: AppTokens.text,
                             ),
                           ),
                         ),
@@ -300,124 +431,161 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
           const SizedBox(height: 24),
           const Text(
-            'Recent triage',
+            'Recent asks',
             style: TextStyle(
               fontFamily: 'Plus Jakarta Sans',
               fontWeight: FontWeight.w600,
               fontSize: 16,
-              color: Color(0xFF0F172A),
+              color: AppTokens.text,
             ),
           ),
           const SizedBox(height: 8),
-          if (_recentCases.isEmpty)
-            Card(
-              child: const Padding(
+          if (MockAskHistoryStore.entries.isEmpty)
+            const Card(
+              child: Padding(
                 padding: EdgeInsets.all(16),
                 child: Row(
                   children: [
-                    Icon(Icons.inbox_outlined, color: Color(0xFF0F172A)),
+                    Icon(Icons.inbox_outlined, color: AppTokens.text),
                     SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        'No triage history yet. Run your first case from Triage.',
+                        'No saved asks yet. Use Ask to run a case, then save it.',
                         style: TextStyle(
                           fontFamily: 'Inter',
                           fontWeight: FontWeight.w500,
-                          color: Color(0xFF0F172A),
+                          color: AppTokens.text,
                         ),
                       ),
                     ),
                   ],
                 ),
               ),
-            ),
-          const SizedBox(height: 24),
-          const Text(
-            'Quick guides',
-            style: TextStyle(
-              fontFamily: 'Plus Jakarta Sans',
-              fontWeight: FontWeight.w600,
-              fontSize: 16,
-              color: Color(0xFF0F172A),
-            ),
-          ),
-          const SizedBox(height: 8),
-          _guideRow(icon: Icons.bloodtype_outlined, title: 'Bleeding control'),
-          const SizedBox(height: 8),
-          _guideRow(icon: Icons.local_fire_department_outlined, title: 'Burn first aid'),
-          const SizedBox(height: 8),
-          _guideRow(icon: Icons.sports_handball_outlined, title: 'Sprain care'),
+            )
+          else
+            ...MockAskHistoryStore.entries.take(3).map(
+                  (e) => Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: Card(
+                      child: ListTile(
+                        title: Text(
+                          e.summary,
+                          style: const TextStyle(
+                            fontFamily: 'Inter',
+                            fontWeight: FontWeight.w600,
+                            color: AppTokens.text,
+                          ),
+                        ),
+                        subtitle: Text(e.category),
+                      ),
+                    ),
+                  ),
+                ),
           const SizedBox(height: 16),
         ],
       ),
     );
   }
 
-  Widget _guideRow({required IconData icon, required String title}) {
+  Widget _categoryCard(AskCategory category) {
     return Card(
-      child: SizedBox(
-        height: 56,
-        child: Row(
-          children: [
-            const SizedBox(width: 16),
-            Icon(icon, color: const Color(0xFF0F766E)),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                title,
-                style: const TextStyle(
-                  fontFamily: 'Inter',
-                  fontWeight: FontWeight.w600,
-                  color: Color(0xFF0F172A),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(AppTokens.radius),
+        onTap: () => widget.onOpenAsk(category),
+        child: SizedBox(
+          height: 64,
+          child: Row(
+            children: [
+              const SizedBox(width: 16),
+              Icon(category.icon, color: AppTokens.accent),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      category.label,
+                      style: const TextStyle(
+                        fontFamily: 'Inter',
+                        fontWeight: FontWeight.w600,
+                        color: AppTokens.text,
+                      ),
+                    ),
+                    Text(
+                      category.shortHint,
+                      style: const TextStyle(
+                        fontFamily: 'Inter',
+                        fontWeight: FontWeight.w400,
+                        fontSize: 12,
+                        color: AppTokens.text,
+                      ),
+                    ),
+                  ],
                 ),
               ),
-            ),
-            const Icon(Icons.chevron_right, color: Color(0xFF0F172A)),
-            const SizedBox(width: 16),
-          ],
+              const Icon(Icons.chevron_right, color: AppTokens.text),
+              const SizedBox(width: 16),
+            ],
+          ),
         ),
+      ),
+    );
+  }
+
+  ButtonStyle _outlineStyle() {
+    return OutlinedButton.styleFrom(
+      side: const BorderSide(color: AppTokens.border, width: 1),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppTokens.radius),
       ),
     );
   }
 }
 
-class TriageInputScreen extends StatelessWidget {
-  const TriageInputScreen({super.key});
+class AskScreen extends StatelessWidget {
+  final AskCategory? initialCategory;
+  const AskScreen({super.key, this.initialCategory});
 
   @override
   Widget build(BuildContext context) {
-    return const SafeArea(child: TriageFormBody(embedInShell: true));
-  }
-}
-
-class TriageInputStandalone extends StatelessWidget {
-  const TriageInputStandalone({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Run Triage')),
-      body: const SafeArea(child: TriageFormBody(embedInShell: false)),
+    return SafeArea(
+      child: AskFormBody(initialCategory: initialCategory ?? AskCategory.medical),
     );
   }
 }
 
-class TriageFormBody extends StatefulWidget {
-  final bool embedInShell;
-  const TriageFormBody({super.key, required this.embedInShell});
+class AskFormBody extends StatefulWidget {
+  final AskCategory initialCategory;
+  const AskFormBody({super.key, required this.initialCategory});
 
   @override
-  State<TriageFormBody> createState() => _TriageFormBodyState();
+  State<AskFormBody> createState() => _AskFormBodyState();
 }
 
-class _TriageFormBodyState extends State<TriageFormBody> {
-  final TextEditingController _symptomController = TextEditingController();
+class _AskFormBodyState extends State<AskFormBody> {
+  late AskCategory _category;
+  final TextEditingController _queryController = TextEditingController();
   bool _hasImage = false;
   bool _isAnalyzing = false;
 
   @override
+  void initState() {
+    super.initState();
+    _category = widget.initialCategory;
+  }
+
+  @override
+  void didUpdateWidget(covariant AskFormBody oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.initialCategory != widget.initialCategory) {
+      _category = widget.initialCategory;
+    }
+  }
+
+  @override
   void dispose() {
-    _symptomController.dispose();
+    _queryController.dispose();
     super.dispose();
   }
 
@@ -426,91 +594,180 @@ class _TriageFormBodyState extends State<TriageFormBody> {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        if (widget.embedInShell) ...[
-          const Text(
-            'AI Triage',
-            style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900),
+        const Text(
+          'Ask offline',
+          style: TextStyle(
+            fontFamily: 'Plus Jakarta Sans',
+            fontWeight: FontWeight.w700,
+            fontSize: 24,
+            color: AppTokens.text,
           ),
-          const SizedBox(height: 8),
-        ],
+        ),
+        const SizedBox(height: 8),
+        const Text(
+          'Pick a topic, describe what you see, optionally attach a photo.',
+          style: TextStyle(
+            fontFamily: 'Inter',
+            fontWeight: FontWeight.w500,
+            fontSize: 14,
+            color: AppTokens.text,
+          ),
+        ),
+        const SizedBox(height: 16),
         Card(
-          elevation: 0,
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('Describe symptom', style: TextStyle(fontWeight: FontWeight.w800)),
-                const SizedBox(height: 10),
-                TextField(
-                  controller: _symptomController,
-                  maxLines: 4,
-                  decoration: const InputDecoration(
-                    hintText: 'Example: deep cut on palm with steady bleeding.',
-                    border: OutlineInputBorder(),
+                const Text(
+                  'Topic',
+                  style: TextStyle(
+                    fontFamily: 'Inter',
+                    fontWeight: FontWeight.w600,
+                    color: AppTokens.text,
                   ),
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 8),
                 Wrap(
                   spacing: 8,
                   runSpacing: 8,
                   children: [
-                    _sampleChip('Minor burn from hot pan'),
-                    _sampleChip('Heavy bleeding after deep cut'),
-                    _sampleChip('Ankle twist with swelling'),
+                    for (final c in AskCategory.values)
+                      ChoiceChip(
+                        label: Text(c.label),
+                        selected: _category == c,
+                        onSelected: (_) => setState(() => _category = c),
+                        selectedColor: const Color(0xFFCCFBF1),
+                        labelStyle: TextStyle(
+                          fontFamily: 'Inter',
+                          fontWeight: FontWeight.w600,
+                          color: AppTokens.text,
+                        ),
+                      ),
                   ],
                 ),
               ],
             ),
           ),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 8),
         Card(
-          elevation: 0,
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('Image input', style: TextStyle(fontWeight: FontWeight.w800)),
-                const SizedBox(height: 10),
-                Container(
-                  height: 150,
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFE2E8F0),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(_hasImage ? Icons.image : Icons.camera_alt_outlined,
-                            size: 34, color: const Color(0xFF475569)),
-                        const SizedBox(height: 8),
-                        Text(_hasImage ? 'Mock image attached' : 'No image selected'),
-                      ],
-                    ),
+                Text(
+                  _category == AskCategory.medical
+                      ? 'Describe the situation'
+                      : 'Your question',
+                  style: const TextStyle(
+                    fontFamily: 'Inter',
+                    fontWeight: FontWeight.w600,
+                    color: AppTokens.text,
                   ),
                 ),
-                const SizedBox(height: 10),
-                OutlinedButton.icon(
-                  onPressed: () => setState(() => _hasImage = !_hasImage),
-                  icon: const Icon(Icons.add_a_photo_outlined),
-                  label: Text(_hasImage ? 'Remove image' : 'Attach mock image'),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: _queryController,
+                  maxLines: 4,
+                  decoration: InputDecoration(
+                    hintText: _category.samplePrompts.first,
+                    border: const OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    for (final p in _category.samplePrompts)
+                      ActionChip(
+                        label: Text(p),
+                        onPressed: () => _queryController.text = p,
+                      ),
+                  ],
                 ),
               ],
             ),
           ),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 8),
         Card(
-          elevation: 0,
-          color: const Color(0xFFF1F5F9),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Photo (optional)',
+                  style: TextStyle(
+                    fontFamily: 'Inter',
+                    fontWeight: FontWeight.w600,
+                    color: AppTokens.text,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Container(
+                  height: 152,
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: AppTokens.border,
+                    borderRadius: BorderRadius.circular(AppTokens.radius),
+                    border: Border.all(color: AppTokens.border),
+                  ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        _hasImage ? Icons.image : Icons.camera_alt_outlined,
+                        size: 32,
+                        color: AppTokens.text,
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        _hasImage
+                            ? 'Mock image attached'
+                            : 'Useful for plants, wounds, animal signs',
+                        style: const TextStyle(
+                          fontFamily: 'Inter',
+                          fontWeight: FontWeight.w500,
+                          color: AppTokens.text,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 8),
+                SizedBox(
+                  height: 48,
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: AppTokens.border),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(AppTokens.radius),
+                      ),
+                    ),
+                    onPressed: () => setState(() => _hasImage = !_hasImage),
+                    icon: const Icon(Icons.add_a_photo_outlined),
+                    label: Text(_hasImage ? 'Remove image' : 'Attach mock image'),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 8),
+        Card(
           child: ListTile(
             leading: const Icon(Icons.mic_none_outlined),
-            title: const Text('Voice input (UI stub)'),
-            subtitle: const Text('Local speech-to-text will be connected later'),
+            title: const Text(
+              'Voice input',
+              style: TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.w600),
+            ),
+            subtitle: const Text('Local speech-to-text stub'),
             trailing: TextButton(
               onPressed: () {
                 ScaffoldMessenger.of(context).showSnackBar(
@@ -522,10 +779,16 @@ class _TriageFormBodyState extends State<TriageFormBody> {
           ),
         ),
         const SizedBox(height: 16),
-        FilledButton(
-          onPressed: _isAnalyzing ? null : _runMockTriage,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 14),
+        SizedBox(
+          height: 48,
+          child: FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: AppTokens.accent,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(AppTokens.radius),
+              ),
+            ),
+            onPressed: _isAnalyzing ? null : _runAsk,
             child: _isAnalyzing
                 ? const Row(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -533,196 +796,253 @@ class _TriageFormBodyState extends State<TriageFormBody> {
                       SizedBox(
                         width: 18,
                         height: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2),
+                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                       ),
-                      SizedBox(width: 10),
+                      SizedBox(width: 8),
                       Text('Analyzing offline...'),
                     ],
                   )
-                : const Text('Run Offline Triage'),
+                : const Text(
+                    'Get offline guidance',
+                    style: TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.w600),
+                  ),
           ),
         ),
+        const SizedBox(height: 16),
       ],
     );
   }
 
-  Future<void> _runMockTriage() async {
-    final symptom = _symptomController.text.trim().isEmpty
-        ? 'Minor burn on left hand while cooking'
-        : _symptomController.text.trim();
+  Future<void> _runAsk() async {
+    final query = _queryController.text.trim().isEmpty
+        ? _category.samplePrompts.first
+        : _queryController.text.trim();
     setState(() => _isAnalyzing = true);
     await Future<void>.delayed(const Duration(milliseconds: 1400));
     if (!mounted) return;
-    final response = MockTriageResponse.fromInput(symptom: symptom, hasImage: _hasImage);
+    final response = MockAskResponse.fromInput(
+      category: _category,
+      query: query,
+      hasImage: _hasImage,
+    );
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (_) => TriageResultScreen(
+        builder: (_) => AskResultScreen(
           response: response,
+          category: _category,
           inputType: _hasImage ? 'image' : 'text',
-          summary: symptom.length <= 65 ? symptom : '${symptom.substring(0, 65)}...',
+          summary: query.length <= 65 ? query : '${query.substring(0, 65)}...',
         ),
       ),
     );
     setState(() => _isAnalyzing = false);
   }
-
-  Widget _sampleChip(String text) {
-    return ActionChip(label: Text(text), onPressed: () => _symptomController.text = text);
-  }
 }
 
-class TriageResultScreen extends StatelessWidget {
-  final MockTriageResponse response;
+class AskResultScreen extends StatelessWidget {
+  final MockAskResponse response;
+  final AskCategory category;
   final String inputType;
   final String summary;
 
-  const TriageResultScreen({
+  const AskResultScreen({
     super.key,
     required this.response,
+    required this.category,
     required this.inputType,
     required this.summary,
   });
 
   @override
   Widget build(BuildContext context) {
-    final color = _severityColor(response.severity);
+    final color = _urgencyColor(response.urgency);
     return Scaffold(
-      appBar: AppBar(title: const Text('Triage Result')),
+      appBar: AppBar(title: Text('${category.label} result')),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
           Card(
-            elevation: 0,
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
                     decoration: BoxDecoration(
-                      color: color.withOpacity(0.15),
-                      borderRadius: BorderRadius.circular(20),
+                      color: color.withOpacity(0.12),
+                      borderRadius: BorderRadius.circular(AppTokens.radius),
+                      border: Border.all(color: color.withOpacity(0.35)),
                     ),
                     child: Text(
-                      'Severity: ${response.severity.toUpperCase()}',
-                      style: TextStyle(color: color, fontWeight: FontWeight.w800),
+                      'Urgency: ${response.urgency.toUpperCase()}',
+                      style: TextStyle(
+                        fontFamily: 'Inter',
+                        fontWeight: FontWeight.w700,
+                        color: color,
+                      ),
                     ),
                   ),
-                  const SizedBox(height: 12),
-                  Text(response.likelyIssue,
-                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
-                  const SizedBox(height: 10),
-                  response.seekHelp
-                      ? _alertBox(
-                          bg: const Color(0xFFB91C1C).withOpacity(0.12),
-                          border: const Color(0xFFB91C1C).withOpacity(0.35),
+                  const SizedBox(height: 8),
+                  Text(
+                    response.title,
+                    style: const TextStyle(
+                      fontFamily: 'Plus Jakarta Sans',
+                      fontWeight: FontWeight.w700,
+                      fontSize: 18,
+                      color: AppTokens.text,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    response.summary,
+                    style: const TextStyle(
+                      fontFamily: 'Inter',
+                      fontWeight: FontWeight.w500,
+                      color: AppTokens.text,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  response.escalate
+                      ? _alert(
                           icon: Icons.warning_amber_outlined,
-                          text: 'Seek professional help now (urgent signs detected).',
-                          textColor: const Color(0xFF991B1B),
+                          text: response.escalateText,
+                          color: const Color(0xFFB91C1C),
                         )
-                      : _alertBox(
-                          bg: const Color(0xFF0F766E).withOpacity(0.12),
-                          border: const Color(0xFF0F766E).withOpacity(0.35),
+                      : _alert(
                           icon: Icons.check_circle_outline,
-                          text: 'Home care may be sufficient. Keep monitoring.',
-                          textColor: const Color(0xFF0F766E),
+                          text: response.escalateText,
+                          color: AppTokens.accent,
                         ),
                 ],
               ),
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
           Card(
-            elevation: 0,
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Immediate steps', style: TextStyle(fontWeight: FontWeight.w800)),
+                  const Text(
+                    'Recommended steps',
+                    style: TextStyle(
+                      fontFamily: 'Inter',
+                      fontWeight: FontWeight.w600,
+                      color: AppTokens.text,
+                    ),
+                  ),
                   const SizedBox(height: 8),
                   for (var i = 0; i < response.steps.length; i++)
                     Padding(
                       padding: const EdgeInsets.only(bottom: 8),
-                      child: Text('${i + 1}. ${response.steps[i]}'),
+                      child: Text(
+                        '${i + 1}. ${response.steps[i]}',
+                        style: const TextStyle(
+                          fontFamily: 'Inter',
+                          fontWeight: FontWeight.w400,
+                          color: AppTokens.text,
+                        ),
+                      ),
                     ),
                 ],
               ),
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
           Card(
-            elevation: 0,
-            color: const Color(0xFFFFF7ED),
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Text(
                 response.disclaimer,
-                style: const TextStyle(color: Color(0xFF9A3412), fontWeight: FontWeight.w600),
+                style: const TextStyle(
+                  fontFamily: 'Inter',
+                  fontWeight: FontWeight.w500,
+                  color: AppTokens.text,
+                ),
               ),
             ),
           ),
-          const SizedBox(height: 12),
-          FilledButton.icon(
-            onPressed: () {
-              MockSymptomHistoryStore.add(
-                HistoryEntry(
-                  id: DateTime.now().millisecondsSinceEpoch,
-                  timestamp: DateTime.now(),
-                  inputType: inputType,
-                  severity: response.severity,
-                  summary: summary,
+          const SizedBox(height: 16),
+          SizedBox(
+            height: 48,
+            child: FilledButton.icon(
+              style: FilledButton.styleFrom(
+                backgroundColor: AppTokens.accent,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(AppTokens.radius),
                 ),
-              );
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Saved to local symptom history.')),
-              );
-            },
-            icon: const Icon(Icons.save),
-            label: const Padding(
-              padding: EdgeInsets.symmetric(vertical: 14),
-              child: Text('Save to History'),
+              ),
+              onPressed: () {
+                MockAskHistoryStore.add(
+                  HistoryEntry(
+                    id: DateTime.now().millisecondsSinceEpoch,
+                    timestamp: DateTime.now(),
+                    inputType: inputType,
+                    category: category.label,
+                    urgency: response.urgency,
+                    summary: summary,
+                  ),
+                );
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Saved to local history.')),
+                );
+              },
+              icon: const Icon(Icons.save),
+              label: const Text('Save to History'),
             ),
           ),
           const SizedBox(height: 8),
-          OutlinedButton.icon(
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const HospitalLocatorScreen()),
-              );
-            },
-            icon: const Icon(Icons.place_outlined),
-            label: const Text('Find Hospital (Stub)'),
+          SizedBox(
+            height: 48,
+            child: OutlinedButton.icon(
+              style: OutlinedButton.styleFrom(
+                side: const BorderSide(color: AppTokens.border),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(AppTokens.radius),
+                ),
+              ),
+              onPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const PlacesLocatorScreen()),
+                );
+              },
+              icon: const Icon(Icons.place_outlined),
+              label: const Text('Open Places (town / hospital / water)'),
+            ),
           ),
+          const SizedBox(height: 16),
         ],
       ),
     );
   }
 
-  Widget _alertBox({
-    required Color bg,
-    required Color border,
+  Widget _alert({
     required IconData icon,
     required String text,
-    required Color textColor,
+    required Color color,
   }) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: bg,
-        border: Border.all(color: border),
-        borderRadius: BorderRadius.circular(12),
+        color: color.withOpacity(0.08),
+        borderRadius: BorderRadius.circular(AppTokens.radius),
+        border: Border.all(color: color.withOpacity(0.3)),
       ),
       child: Row(
         children: [
-          Icon(icon, color: textColor),
+          Icon(icon, color: color),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
               text,
-              style: TextStyle(color: textColor, fontWeight: FontWeight.w800),
+              style: TextStyle(
+                fontFamily: 'Inter',
+                fontWeight: FontWeight.w600,
+                color: color,
+              ),
             ),
           ),
         ],
@@ -730,11 +1050,11 @@ class TriageResultScreen extends StatelessWidget {
     );
   }
 
-  Color _severityColor(String severity) {
-    switch (severity) {
-      case 'mild':
+  Color _urgencyColor(String urgency) {
+    switch (urgency) {
+      case 'low':
         return const Color(0xFF15803D);
-      case 'moderate':
+      case 'medium':
         return const Color(0xFFB45309);
       default:
         return const Color(0xFFB91C1C);
@@ -742,8 +1062,8 @@ class TriageResultScreen extends StatelessWidget {
   }
 }
 
-class FirstAidGuidesScreen extends StatelessWidget {
-  const FirstAidGuidesScreen({super.key});
+class FieldGuidesScreen extends StatelessWidget {
+  const FieldGuidesScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -751,51 +1071,93 @@ class FirstAidGuidesScreen extends StatelessWidget {
       child: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          const Text('First-Aid Guides',
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900)),
+          const Text(
+            'Field Guides',
+            style: TextStyle(
+              fontFamily: 'Plus Jakarta Sans',
+              fontWeight: FontWeight.w700,
+              fontSize: 24,
+              color: AppTokens.text,
+            ),
+          ),
           const SizedBox(height: 8),
           const Text(
-            'Offline static guides for common situations.',
-            style: TextStyle(color: Color(0xFF475569), fontWeight: FontWeight.w600),
+            'Offline checklists for survival and first aid.',
+            style: TextStyle(
+              fontFamily: 'Inter',
+              fontWeight: FontWeight.w500,
+              color: AppTokens.text,
+            ),
           ),
-          const SizedBox(height: 12),
-          _guideCard('Cuts and bleeding', [
+          const SizedBox(height: 16),
+          _guide('Food safety', [
+            'Never eat unknown mushrooms or berries with milky sap.',
+            'If unsure, do not taste — ask the app with a photo.',
+            'Avoid plants with white berries or almond-like scent in crushed leaves.',
+          ]),
+          _guide('Finding water', [
+            'Follow downhill terrain and animal trails toward moisture.',
+            'Prefer flowing water over stagnant pools when possible.',
+            'Boil or filter before drinking whenever you can.',
+          ]),
+          _guide('Wildlife avoidance', [
+            'Make noise while walking in dense cover.',
+            'Store food away from sleeping area; never cook in tent.',
+            'Back away slowly from snakes; do not try to handle them.',
+          ]),
+          _guide('Getting to help', [
+            'Note landmarks and keep moving toward lower elevation / roads.',
+            'Use cached places list for nearest town or clinic.',
+            'Conserve daylight; mark your path when possible.',
+          ]),
+          _guide('Cuts and bleeding', [
             'Apply clean direct pressure for 10 minutes.',
             'Raise injured area above heart if possible.',
             'If bleeding is heavy or not stopping, seek emergency help.',
           ]),
-          _guideCard('Burns', [
-            'Cool burn under running water for 20 minutes.',
-            'Do not apply ice or toothpaste.',
-            'Cover with sterile, non-stick dressing.',
-          ]),
-          _guideCard('Sprain', [
-            'Rest the injured area.',
-            'Apply ice packs in short intervals.',
-            'Use compression and elevation.',
-          ]),
-          _guideCard('Fever', [
-            'Hydrate and rest.',
-            'Monitor temperature every few hours.',
-            'Escalate if persistent high fever or confusion.',
+          _guide('Burns', [
+            'Cool under running water for 20 minutes.',
+            'Do not apply ice, oils, or toothpaste.',
+            'Cover with sterile non-stick dressing.',
           ]),
         ],
       ),
     );
   }
 
-  Widget _guideCard(String title, List<String> points) {
-    return Card(
-      elevation: 0,
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(title, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
-            const SizedBox(height: 8),
-            for (var i = 0; i < points.length; i++) Text('${i + 1}. ${points[i]}'),
-          ],
+  Widget _guide(String title, List<String> points) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Card(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: const TextStyle(
+                  fontFamily: 'Inter',
+                  fontWeight: FontWeight.w600,
+                  fontSize: 16,
+                  color: AppTokens.text,
+                ),
+              ),
+              const SizedBox(height: 8),
+              for (var i = 0; i < points.length; i++)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: Text(
+                    '${i + 1}. ${points[i]}',
+                    style: const TextStyle(
+                      fontFamily: 'Inter',
+                      fontWeight: FontWeight.w400,
+                      color: AppTokens.text,
+                    ),
+                  ),
+                ),
+            ],
+          ),
         ),
       ),
     );
@@ -814,57 +1176,79 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final all = MockSymptomHistoryStore.entries;
-    final items =
-        _filter == null ? all : all.where((e) => e.severity == _filter).toList(growable: false);
+    final all = MockAskHistoryStore.entries;
+    final items = _filter == null
+        ? all
+        : all.where((e) => e.category == _filter).toList(growable: false);
 
     return SafeArea(
       child: Column(
         children: [
           const Padding(
-            padding: EdgeInsets.fromLTRB(16, 16, 16, 6),
+            padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
             child: Align(
               alignment: Alignment.centerLeft,
-              child: Text('Symptom History',
-                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900)),
+              child: Text(
+                'Ask History',
+                style: TextStyle(
+                  fontFamily: 'Plus Jakarta Sans',
+                  fontWeight: FontWeight.w700,
+                  fontSize: 24,
+                  color: AppTokens.text,
+                ),
+              ),
             ),
           ),
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
             child: Wrap(
               spacing: 8,
+              runSpacing: 8,
               children: [
                 _chip('All', null),
-                _chip('Mild', 'mild'),
-                _chip('Moderate', 'moderate'),
-                _chip('Emergency', 'emergency'),
+                for (final c in AskCategory.values) _chip(c.label, c.label),
               ],
             ),
           ),
           Expanded(
             child: items.isEmpty
-                ? const Center(child: Text('No entries yet. Save from Triage result page.'))
+                ? const Center(
+                    child: Text(
+                      'No entries yet. Save from an Ask result.',
+                      style: TextStyle(
+                        fontFamily: 'Inter',
+                        fontWeight: FontWeight.w500,
+                        color: AppTokens.text,
+                      ),
+                    ),
+                  )
                 : ListView.builder(
                     padding: const EdgeInsets.all(16),
                     itemCount: items.length,
                     itemBuilder: (_, index) {
                       final e = items[index];
-                      final color = _severityColor(e.severity);
-                      return Card(
-                        elevation: 0,
-                        child: ListTile(
-                          title: Text(e.summary, style: const TextStyle(fontWeight: FontWeight.w700)),
-                          subtitle: Text(
-                              '${e.inputType} input • ${e.timestamp.hour.toString().padLeft(2, '0')}:${e.timestamp.minute.toString().padLeft(2, '0')}'),
-                          trailing: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                            decoration: BoxDecoration(
-                              color: color.withOpacity(0.15),
-                              borderRadius: BorderRadius.circular(16),
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: Card(
+                          child: ListTile(
+                            title: Text(
+                              e.summary,
+                              style: const TextStyle(
+                                fontFamily: 'Inter',
+                                fontWeight: FontWeight.w600,
+                                color: AppTokens.text,
+                              ),
                             ),
-                            child: Text(
-                              e.severity.toUpperCase(),
-                              style: TextStyle(color: color, fontWeight: FontWeight.w800),
+                            subtitle: Text(
+                              '${e.category} • ${e.inputType} • ${_hhmm(e.timestamp)}',
+                            ),
+                            trailing: Text(
+                              e.urgency.toUpperCase(),
+                              style: const TextStyle(
+                                fontFamily: 'Inter',
+                                fontWeight: FontWeight.w700,
+                                color: AppTokens.accent,
+                              ),
                             ),
                           ),
                         ),
@@ -875,13 +1259,23 @@ class _HistoryScreenState extends State<HistoryScreen> {
           if (all.isNotEmpty)
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-              child: OutlinedButton.icon(
-                onPressed: () {
-                  MockSymptomHistoryStore.clear();
-                  setState(() => _filter = null);
-                },
-                icon: const Icon(Icons.delete_outline),
-                label: const Text('Clear History'),
+              child: SizedBox(
+                height: 48,
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  style: OutlinedButton.styleFrom(
+                    side: const BorderSide(color: AppTokens.border),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(AppTokens.radius),
+                    ),
+                  ),
+                  onPressed: () {
+                    MockAskHistoryStore.clear();
+                    setState(() => _filter = null);
+                  },
+                  icon: const Icon(Icons.delete_outline),
+                  label: const Text('Clear History'),
+                ),
               ),
             ),
         ],
@@ -892,20 +1286,13 @@ class _HistoryScreenState extends State<HistoryScreen> {
   Widget _chip(String label, String? value) {
     return ActionChip(
       label: Text(label),
-      backgroundColor: _filter == value ? const Color(0xFF99F6E4) : null,
+      backgroundColor: _filter == value ? const Color(0xFFCCFBF1) : null,
       onPressed: () => setState(() => _filter = value),
     );
   }
 
-  Color _severityColor(String severity) {
-    switch (severity) {
-      case 'mild':
-        return const Color(0xFF15803D);
-      case 'moderate':
-        return const Color(0xFFB45309);
-      default:
-        return const Color(0xFFB91C1C);
-    }
+  String _hhmm(DateTime dt) {
+    return '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
   }
 }
 
@@ -919,113 +1306,116 @@ class EmergencyScreen extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          _emergencyTile(
-            context,
-            icon: Icons.call,
-            title: 'Call Emergency Helpline',
-            subtitle: 'Tap to simulate emergency call action',
-          ),
-          _emergencyTile(
-            context,
-            icon: Icons.local_hospital_outlined,
-            title: 'Nearest Hospital (Stub)',
-            subtitle: 'Uses offline cached map in final version',
-          ),
-          _emergencyTile(
-            context,
-            icon: Icons.sms_outlined,
-            title: 'Alert Emergency Contact',
-            subtitle: 'Share location and symptom summary (planned)',
-          ),
+          _tile(context, Icons.call, 'Call emergency helpline', 'Simulated call action'),
+          _tile(context, Icons.local_hospital_outlined, 'Nearest hospital', 'Cached offline list'),
+          _tile(context, Icons.location_city_outlined, 'Nearest town / city', 'Cached settlement stub'),
+          _tile(context, Icons.water_drop_outlined, 'Known water points', 'Offline water markers'),
+          _tile(context, Icons.sms_outlined, 'Alert emergency contact', 'Share summary (planned)'),
         ],
       ),
     );
   }
 
-  Widget _emergencyTile(
-    BuildContext context, {
-    required IconData icon,
-    required String title,
-    required String subtitle,
-  }) {
-    return Card(
-      elevation: 0,
-      child: ListTile(
-        leading: Icon(icon, color: const Color(0xFFB91C1C)),
-        title: Text(title, style: const TextStyle(fontWeight: FontWeight.w800)),
-        subtitle: Text(subtitle),
-        onTap: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('$title tapped (UI stub).')),
-          );
-        },
+  Widget _tile(BuildContext context, IconData icon, String title, String subtitle) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Card(
+        child: ListTile(
+          leading: Icon(icon, color: AppTokens.accent),
+          title: Text(
+            title,
+            style: const TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.w600),
+          ),
+          subtitle: Text(subtitle),
+          onTap: () {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('$title tapped (UI stub).')),
+            );
+          },
+        ),
       ),
     );
   }
 }
 
-class HospitalLocatorScreen extends StatelessWidget {
-  const HospitalLocatorScreen({super.key});
+class PlacesLocatorScreen extends StatelessWidget {
+  const PlacesLocatorScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Offline Hospital Locator')),
+      appBar: AppBar(title: const Text('Places (offline stub)')),
       body: ListView(
         padding: const EdgeInsets.all(16),
-        children: [
+        children: const [
           Card(
-            elevation: 0,
             child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: const [
-                  Text('UI Stub for Round 1',
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900)),
-                  SizedBox(height: 8),
-                  Text(
-                    'This screen will use cached hospital data and location on-device in the full build.',
-                  ),
-                ],
+              padding: EdgeInsets.all(16),
+              child: Text(
+                'Cached offline places for hospitals, towns, and water. No network required in the final build.',
+                style: TextStyle(
+                  fontFamily: 'Inter',
+                  fontWeight: FontWeight.w500,
+                  color: AppTokens.text,
+                ),
               ),
             ),
           ),
-          const SizedBox(height: 10),
-          ...const [
-            _HospitalCard(name: 'City Civil Hospital', distance: '2.1 km', eta: '8 min'),
-            _HospitalCard(name: 'General Trauma Center', distance: '4.5 km', eta: '14 min'),
-            _HospitalCard(name: 'Community Health Clinic', distance: '6.2 km', eta: '20 min'),
-          ],
+          SizedBox(height: 8),
+          _PlaceCard(
+            icon: Icons.local_hospital,
+            name: 'City Civil Hospital',
+            meta: 'Hospital • 2.1 km • 8 min',
+          ),
+          SizedBox(height: 8),
+          _PlaceCard(
+            icon: Icons.location_city_outlined,
+            name: 'Ridgeview Town Center',
+            meta: 'Town • 5.4 km • 18 min',
+          ),
+          SizedBox(height: 8),
+          _PlaceCard(
+            icon: Icons.water_drop_outlined,
+            name: 'Spring Creek (seasonal)',
+            meta: 'Water • 1.2 km • purify before use',
+          ),
+          SizedBox(height: 8),
+          _PlaceCard(
+            icon: Icons.apartment_outlined,
+            name: 'North Valley City',
+            meta: 'City • 12.0 km • 35 min',
+          ),
         ],
       ),
     );
   }
 }
 
-class _HospitalCard extends StatelessWidget {
+class _PlaceCard extends StatelessWidget {
+  final IconData icon;
   final String name;
-  final String distance;
-  final String eta;
+  final String meta;
 
-  const _HospitalCard({
+  const _PlaceCard({
+    required this.icon,
     required this.name,
-    required this.distance,
-    required this.eta,
+    required this.meta,
   });
 
   @override
   Widget build(BuildContext context) {
     return Card(
-      elevation: 0,
       child: ListTile(
-        leading: const Icon(Icons.local_hospital, color: Color(0xFF0F766E)),
-        title: Text(name, style: const TextStyle(fontWeight: FontWeight.w800)),
-        subtitle: Text('Distance: $distance • ETA: $eta'),
+        leading: Icon(icon, color: AppTokens.accent),
+        title: Text(
+          name,
+          style: const TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.w600),
+        ),
+        subtitle: Text(meta),
         trailing: TextButton(
           onPressed: () {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Directions are mocked in this demo.')),
+              const SnackBar(content: Text('Route is mocked in this demo.')),
             );
           },
           child: const Text('Route'),
@@ -1044,27 +1434,33 @@ class SettingsScreen extends StatelessWidget {
       child: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          const Text('Settings', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900)),
-          const SizedBox(height: 10),
+          const Text(
+            'Settings',
+            style: TextStyle(
+              fontFamily: 'Plus Jakarta Sans',
+              fontWeight: FontWeight.w700,
+              fontSize: 24,
+              color: AppTokens.text,
+            ),
+          ),
+          const SizedBox(height: 8),
           Card(
-            elevation: 0,
             child: SwitchListTile(
               value: true,
               onChanged: (_) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Offline lock is always ON in demo mode.')),
+                  const SnackBar(content: Text('Offline lock stays ON in demo mode.')),
                 );
               },
               title: const Text('Offline-only mode'),
-              subtitle: const Text('Blocks network use in final app architecture'),
+              subtitle: const Text('No cloud calls in final architecture'),
             ),
           ),
           Card(
-            elevation: 0,
             child: ListTile(
               leading: const Icon(Icons.language_outlined),
               title: const Text('Language'),
-              subtitle: const Text('English (multi-language planned)'),
+              subtitle: const Text('English (more planned)'),
               onTap: () {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text('Language selector planned.')),
@@ -1073,18 +1469,19 @@ class SettingsScreen extends StatelessWidget {
             ),
           ),
           Card(
-            elevation: 0,
             child: ListTile(
               leading: const Icon(Icons.info_outline),
               title: const Text('Safety disclaimer'),
-              subtitle: const Text('Always shown in triage results'),
+              subtitle: const Text('Shown on every result'),
               onTap: () {
                 showDialog<void>(
                   context: context,
                   builder: (_) => AlertDialog(
                     title: const Text('Safety Notice'),
                     content: const Text(
-                      'Pocket Medic provides first-aid guidance only. It is not a substitute for professional medical care.',
+                      'Pocket Medic gives offline field and first-aid guidance only. '
+                      'It is not a substitute for professional medical care, '
+                      'certified foraging, or official rescue services.',
                     ),
                     actions: [
                       TextButton(
@@ -1098,14 +1495,23 @@ class SettingsScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 8),
-          FilledButton.icon(
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const EmergencyScreen()),
-              );
-            },
-            icon: const Icon(Icons.sos),
-            label: const Text('Open Emergency Actions'),
+          SizedBox(
+            height: 48,
+            child: FilledButton.icon(
+              style: FilledButton.styleFrom(
+                backgroundColor: AppTokens.accent,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(AppTokens.radius),
+                ),
+              ),
+              onPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const EmergencyScreen()),
+                );
+              },
+              icon: const Icon(Icons.sos),
+              label: const Text('Open Emergency Actions'),
+            ),
           ),
         ],
       ),
@@ -1113,70 +1519,155 @@ class SettingsScreen extends StatelessWidget {
   }
 }
 
-class MockTriageResponse {
-  final String severity;
-  final String likelyIssue;
+class MockAskResponse {
+  final String urgency; // low | medium | high
+  final String title;
+  final String summary;
   final List<String> steps;
-  final bool seekHelp;
+  final bool escalate;
+  final String escalateText;
   final String disclaimer;
 
-  const MockTriageResponse({
-    required this.severity,
-    required this.likelyIssue,
+  const MockAskResponse({
+    required this.urgency,
+    required this.title,
+    required this.summary,
     required this.steps,
-    required this.seekHelp,
+    required this.escalate,
+    required this.escalateText,
     required this.disclaimer,
   });
 
-  factory MockTriageResponse.fromInput({
-    required String symptom,
+  factory MockAskResponse.fromInput({
+    required AskCategory category,
+    required String query,
     required bool hasImage,
   }) {
-    final normalized = symptom.toLowerCase();
-    if (normalized.contains('heavy bleeding') ||
-        normalized.contains('unconscious') ||
-        normalized.contains('severe chest pain')) {
-      return const MockTriageResponse(
-        severity: 'emergency',
-        likelyIssue: 'Potential critical condition',
-        steps: [
-          'Call emergency services immediately.',
-          'Keep the person still and monitor breathing.',
-          'Apply direct pressure to bleeding with clean cloth.',
-          'Do not give food or drink.',
-        ],
-        seekHelp: true,
-        disclaimer: 'This is not medical advice. Seek professional care if unsure.',
-      );
-    }
+    final q = query.toLowerCase();
+    const disclaimer =
+        'Offline guidance only. Not a substitute for professionals. If unsure, escalate and stay safe.';
 
-    if (normalized.contains('burn') || hasImage) {
-      return const MockTriageResponse(
-        severity: 'moderate',
-        likelyIssue: 'Possible superficial burn or skin injury',
-        steps: [
-          'Cool the area with running water for 20 minutes.',
-          'Remove rings or tight items near affected area.',
-          'Cover with sterile non-stick gauze.',
-          'Avoid ice, oils, or toothpaste on the burn.',
-        ],
-        seekHelp: true,
-        disclaimer: 'This is not medical advice. Seek professional care if unsure.',
-      );
+    switch (category) {
+      case AskCategory.food:
+        return MockAskResponse(
+          urgency: (q.contains('mushroom') || q.contains('berry') || hasImage)
+              ? 'high'
+              : 'medium',
+          title: 'Edibility check (conservative)',
+          summary:
+              'Without expert confirmation, treat unknown plants as unsafe. When uncertain, do not eat.',
+          steps: const [
+            'Do not taste unknown plants, berries, or mushrooms.',
+            'Capture clear photos of leaf, stem, fruit, and nearby habitat.',
+            'Prefer known packaged food over foraging when available.',
+            'If already ingested and symptoms appear, stop eating and seek help.',
+          ],
+          escalate: true,
+          escalateText: 'If identification is uncertain, treat as not edible.',
+          disclaimer: disclaimer,
+        );
+      case AskCategory.water:
+        return const MockAskResponse(
+          urgency: 'medium',
+          title: 'Water source guidance',
+          summary:
+              'Prioritize flowing sources downhill, then purify. Stagnant water is higher risk.',
+          steps: [
+            'Move downhill and follow animal trails / green vegetation.',
+            'Prefer clear flowing streams over stagnant ponds.',
+            'Boil for at least 1 minute (longer at high altitude) if possible.',
+            'If you cannot boil, use a filter/purifier tablet and still avoid cloudy water.',
+          ],
+          escalate: false,
+          escalateText: 'Purify before drinking whenever possible.',
+          disclaimer: disclaimer,
+        );
+      case AskCategory.wildlife:
+        return MockAskResponse(
+          urgency: (q.contains('snake') || q.contains('bear') || q.contains('attack'))
+              ? 'high'
+              : 'medium',
+          title: 'Wildlife safety tips',
+          summary:
+              'Avoid surprise encounters, give animals space, and never handle wildlife.',
+          steps: const [
+            'Stop, stay calm, and give the animal an escape route.',
+            'Back away slowly; do not run or turn your back abruptly.',
+            'Make noise while traveling in dense cover.',
+            'Keep food sealed and away from sleeping areas.',
+          ],
+          escalate: q.contains('bite') || q.contains('attack'),
+          escalateText: q.contains('bite') || q.contains('attack')
+              ? 'Possible dangerous encounter — seek medical help urgently.'
+              : 'Avoid contact and leave the area calmly.',
+          disclaimer: disclaimer,
+        );
+      case AskCategory.locate:
+        return const MockAskResponse(
+          urgency: 'medium',
+          title: 'Nearest help & settlement (stub)',
+          summary:
+              'Use cached offline places for hospitals, towns, and known water points.',
+          steps: [
+            'Open Places for nearest hospital / town / water stubs.',
+            'Move toward roads, lower elevation, or visible settlement lights.',
+            'Conserve energy and daylight; mark your path.',
+            'If injured, prioritize shelter and signaling over long travel.',
+          ],
+          escalate: false,
+          escalateText: 'Use cached Places list for offline navigation stubs.',
+          disclaimer: disclaimer,
+        );
+      case AskCategory.medical:
+        if (q.contains('heavy bleeding') ||
+            q.contains('unconscious') ||
+            q.contains('severe chest pain')) {
+          return const MockAskResponse(
+            urgency: 'high',
+            title: 'Potential critical condition',
+            summary: 'Urgent medical signs detected in the description.',
+            steps: [
+              'Call emergency services immediately if available.',
+              'Keep the person still and monitor breathing.',
+              'Apply direct pressure to bleeding with a clean cloth.',
+              'Do not give food or drink.',
+            ],
+            escalate: true,
+            escalateText: 'Seek professional help now.',
+            disclaimer: disclaimer,
+          );
+        }
+        if (q.contains('burn') || hasImage) {
+          return const MockAskResponse(
+            urgency: 'medium',
+            title: 'Possible burn / skin injury',
+            summary: 'Conservative first-aid steps while you get to safer care.',
+            steps: [
+              'Cool with running water for 20 minutes.',
+              'Remove rings/tight items near the area if safe.',
+              'Cover with sterile non-stick gauze.',
+              'Avoid ice, oils, or toothpaste on the burn.',
+            ],
+            escalate: true,
+            escalateText: 'Seek care if blistering, large area, or face/hands involved.',
+            disclaimer: disclaimer,
+          );
+        }
+        return const MockAskResponse(
+          urgency: 'low',
+          title: 'Minor soft tissue injury',
+          summary: 'Basic first-aid and monitoring guidance.',
+          steps: [
+            'Clean gently with clean water.',
+            'Use antiseptic if available.',
+            'Apply bandage and watch for swelling/infection.',
+            'Rest and re-check in a few hours.',
+          ],
+          escalate: false,
+          escalateText: 'Home care may be enough — keep monitoring.',
+          disclaimer: disclaimer,
+        );
     }
-
-    return const MockTriageResponse(
-      severity: 'mild',
-      likelyIssue: 'Minor soft tissue injury',
-      steps: [
-        'Clean the area gently with water.',
-        'Use antiseptic if available.',
-        'Apply bandage and monitor for swelling or pain.',
-        'Rest and re-check in a few hours.',
-      ],
-      seekHelp: false,
-      disclaimer: 'This is not medical advice. Seek professional care if unsure.',
-    );
   }
 }
 
@@ -1184,19 +1675,21 @@ class HistoryEntry {
   final int id;
   final DateTime timestamp;
   final String inputType;
-  final String severity;
+  final String category;
+  final String urgency;
   final String summary;
 
   const HistoryEntry({
     required this.id,
     required this.timestamp,
     required this.inputType,
-    required this.severity,
+    required this.category,
+    required this.urgency,
     required this.summary,
   });
 }
 
-class MockSymptomHistoryStore {
+class MockAskHistoryStore {
   static final List<HistoryEntry> _entries = [];
 
   static List<HistoryEntry> get entries => List.unmodifiable(_entries);

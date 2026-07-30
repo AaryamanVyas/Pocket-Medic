@@ -32,8 +32,8 @@ class ClassifyTests(unittest.TestCase):
     def test_spring(self):
         self.assertEqual(classify_tags({"natural": "spring"}), "spring")
 
-    def test_hiking(self):
-        self.assertEqual(classify_tags({"highway": "path"}), "hiking_trail")
+    def test_trail(self):
+        self.assertEqual(classify_tags({"highway": "path"}), "trail")
 
     def test_ignore(self):
         self.assertIsNone(classify_tags({"amenity": "cafe"}))
@@ -81,6 +81,15 @@ class QueryTests(unittest.TestCase):
         self.assertIsNotNone(place)
         assert place is not None
         self.assertIn(place["type"], {"city", "town", "village"})
+
+
+class OsmiterImportSmokeTests(unittest.TestCase):
+    def test_osmiter_importable(self):
+        import osmiter  # noqa: F401
+
+        from osm_offline.importer import import_pbf_to_sqlite
+
+        self.assertTrue(callable(import_pbf_to_sqlite))
 
 
 if __name__ == "__main__":

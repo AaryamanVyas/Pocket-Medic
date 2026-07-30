@@ -31,7 +31,7 @@ def main() -> int:
     print("=== reverse_geocode ===")
     print(json.dumps(reverse_geocode(args.db, args.lat, args.lon), indent=2, ensure_ascii=False))
 
-    for feature_type in ("hospital", "drinking_water", "spring", "hiking_trail", "campsite"):
+    for feature_type in ("hospital", "spring", "trail", "campsite", "lake"):
         print(f"\n=== find_nearby type={feature_type} ===")
         hits = find_nearby(
             args.db,

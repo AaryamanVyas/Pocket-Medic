@@ -28,6 +28,7 @@ from typing import Any, Dict, Iterable, List, Optional, Tuple, Union
 from .db import connect, insert_features, set_meta
 from .feature_types import classify_tags, normalize_tags, preferred_name
 from .geo import centroid, valid_wgs84
+from .paths import expand_user_path, resolve_pbf_path
 from .schema import create_schema, reset_database
 
 try:
@@ -127,6 +128,8 @@ def import_pbf_to_sqlite(
     replace: bool = True,
     flush_every: int = 5000,
     keep_node_cache: bool = False,
+    verbose: bool = False,
+    auto_discover: bool = True,
 ) -> Dict[str, Any]:
     """
     Convert an OSM PBF extract into a local SQLite survival database.
@@ -143,17 +146,36 @@ def import_pbf_to_sqlite(
         How many matched features to buffer before writing to SQLite.
     keep_node_cache:
         If True, keep the temporary node-location SQLite file for debugging.
+    verbose:
+        Print progress / path diagnostics.
+    auto_discover:
+        If the given PBF path is missing, search common folders.
     """
-    pbf = Path(pbf_path)
-    if not pbf.is_file():
-        raise FileNotFoundError(f"PBF not found: {pbf}")
+    def _v(msg: str) -> None:
+        if verbose:
+            print(msg, flush=True)
 
-    out = Path(db_path)
+    cwd = Path.cwd()
+    _v(f"[import] cwd: {cwd}")
+    _v(f"[import] requested PBF: {pbf_path}")
+
+    pbf = resolve_pbf_path(pbf_path, auto_discover=auto_discover)
+    out = expand_user_path(db_path)
+    if not out.is_absolute():
+        out = (cwd / out).resolve()
+    else:
+        out = out.resolve()
+
+    _v(f"[import] resolved PBF: {pbf}")
+    _v(f"[import] output SQLite: {out}")
+    _v(f"[import] PBF size bytes: {pbf.stat().st_size}")
+
     started = time.perf_counter()
     conn = connect(out)
 
-    cache_path = out.with_suffix(out.suffix + ".nodecache")
+    cache_path = Path(str(out) + ".nodecache")
     node_cache = NodeLocationCache(cache_path)
+    _v(f"[import] node cache: {cache_path}")
 
     stats = {
         "nodes_seen": 0,
@@ -179,12 +201,18 @@ def import_pbf_to_sqlite(
             create_schema(conn)
 
         file_format = _guess_pbf_format(pbf)
+        _v(f"[import] parser=osmiter format={file_format}")
         # osmiter streams elements in file order (nodes usually before ways).
         for element in iter_from_osm(str(pbf), file_format=file_format):
             etype = element.get("type")
 
             if etype == "node":
                 stats["nodes_seen"] += 1
+                if verbose and stats["nodes_seen"] % 500_000 == 0:
+                    _v(
+                        f"[import] progress nodes_seen={stats['nodes_seen']:,} "
+                        f"kept={stats['nodes_kept']:,} ways_kept={stats['ways_kept']:,}"
+                    )
                 node_id = int(element["id"])
                 lat = float(element["lat"])
                 lon = float(element["lon"])
@@ -218,6 +246,11 @@ def import_pbf_to_sqlite(
 
             if etype == "way":
                 stats["ways_seen"] += 1
+                if verbose and stats["ways_seen"] % 100_000 == 0:
+                    _v(
+                        f"[import] progress ways_seen={stats['ways_seen']:,} "
+                        f"ways_kept={stats['ways_kept']:,}"
+                    )
                 tags = normalize_tags(element.get("tag"))
                 feature_type = classify_tags(tags)
                 if feature_type is None:
@@ -268,9 +301,10 @@ def import_pbf_to_sqlite(
         set_meta(conn, "source_pbf", str(pbf.resolve()))
         set_meta(conn, "imported_at_utc", datetime.now(timezone.utc).isoformat())
         set_meta(conn, "feature_count", str(count))
-        set_meta(conn, "importer_version", "2.0.0-osmiter")
+        set_meta(conn, "importer_version", "2.1.0-osmiter")
         set_meta(conn, "parser", "osmiter")
         conn.commit()
+        _v(f"[import] done feature_count={count:,} elapsed_s={elapsed:.1f}")
 
         return {
             "db_path": str(out.resolve()),

@@ -92,5 +92,58 @@ class OsmiterImportSmokeTests(unittest.TestCase):
         self.assertTrue(callable(import_pbf_to_sqlite))
 
 
+class ImporterTests(unittest.TestCase):
+    def test_import_small_osm(self):
+        import tempfile
+        from pathlib import Path
+        from osm_offline.importer import import_pbf_to_sqlite
+        
+        osm_xml = """<?xml version="1.0" encoding="UTF-8"?>
+<osm version="0.6" generator="test">
+  <node id="1" lat="28.61" lon="77.20" version="1" timestamp="2023-01-01T00:00:00Z">
+    <tag k="amenity" v="hospital"/>
+    <tag k="name" v="Test Hospital"/>
+  </node>
+</osm>
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            pbf_path = Path(tmpdir) / "test.osm"
+            pbf_path.write_text(osm_xml, encoding="utf-8")
+            
+            db_path = Path(tmpdir) / "survival.sqlite"
+            
+            # The database is completely missing, ensure it gets created and import succeeds.
+            stats = import_pbf_to_sqlite(pbf_path, db_path, replace=True)
+            self.assertEqual(stats["nodes_kept"], 1)
+            
+            conn = sqlite3.connect(db_path)
+            rows = conn.execute("SELECT name FROM sqlite_master WHERE type IN ('table', 'view')").fetchall()
+            tables = {r[0] for r in rows}
+            self.assertIn("features", tables)
+            self.assertIn("features_rtree", tables)
+            
+            count = conn.execute("SELECT COUNT(*) FROM features").fetchone()[0]
+            self.assertEqual(count, 1)
+            
+            rtree_count = conn.execute("SELECT COUNT(*) FROM features_rtree").fetchone()[0]
+            self.assertEqual(rtree_count, 1)
+            conn.close()
+
+            # Now test append mode where features_rtree is intentionally dropped to simulate the crash scenario
+            conn = sqlite3.connect(db_path)
+            conn.execute("DROP TABLE IF EXISTS features_rtree")
+            conn.commit()
+            conn.close()
+
+            # Importing again with replace=False should recreate features_rtree and not crash
+            stats2 = import_pbf_to_sqlite(pbf_path, db_path, replace=False)
+            self.assertEqual(stats2["nodes_kept"], 1)
+
+            conn = sqlite3.connect(db_path)
+            rows = conn.execute("SELECT name FROM sqlite_master WHERE type IN ('table', 'view')").fetchall()
+            tables = {r[0] for r in rows}
+            self.assertIn("features_rtree", tables)
+            conn.close()
+
 if __name__ == "__main__":
     unittest.main()

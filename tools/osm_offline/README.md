@@ -77,7 +77,29 @@ tools/osm_offline/
 
 ---
 
-## Setup
+## Windows path notes
+
+The PBF does **not** need to live under `data/` if it is in `Downloads`.
+
+```powershell
+# This works even if the file is only in Downloads:
+python -m osm_offline import data\southern-zone-260729.osm.pbf -o data\survival.sqlite --yes
+```
+
+The CLI will:
+1. Print cwd + requested + resolved absolute paths
+2. Auto-search `.\data`, project tree, and `%USERPROFILE%\Downloads`
+3. Prompt before overwriting an existing SQLite (use `--yes` to skip)
+4. After a successful import, automatically run:
+   - `reverse --lat 12.9716 --lon 77.5946`
+   - `nearby ... -r 5000 -t hospital`
+
+List discovered PBF files:
+
+```powershell
+python -m osm_offline find-pbf --name southern-zone-260729.osm.pbf
+```
+
 
 ```bash
 cd tools/osm_offline

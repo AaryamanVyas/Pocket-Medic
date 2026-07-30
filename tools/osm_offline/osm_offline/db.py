@@ -43,7 +43,11 @@ def open_db(db: ConnOrPath) -> Iterator[sqlite3.Connection]:
 
 
 def ensure_schema(conn: sqlite3.Connection) -> None:
-    create_schema(conn)
+    required = {"features", "features_rtree", "meta"}
+    rows = conn.execute("SELECT name FROM sqlite_master WHERE type IN ('table', 'view')").fetchall()
+    existing = {r["name"] for r in rows}
+    if not required.issubset(existing):
+        create_schema(conn)
 
 
 def set_meta(conn: sqlite3.Connection, key: str, value: str) -> None:
@@ -75,6 +79,8 @@ def insert_features(
     """
     if not rows:
         return 0
+
+    ensure_schema(conn)
 
     inserted = 0
     buffer: List[Dict[str, Any]] = []

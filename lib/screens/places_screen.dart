@@ -17,6 +17,7 @@ class _PlacesLocatorScreenState extends State<PlacesLocatorScreen> {
   bool _loading = true;
   String? _error;
   String? _selectedType;
+  bool _usingDefault = false;
 
   static const _defaultLat = 13.0827;
   static const _defaultLon = 80.2707;
@@ -39,7 +40,8 @@ class _PlacesLocatorScreenState extends State<PlacesLocatorScreen> {
     if (permission == LocationPermission.deniedForever) return null;
 
     return await Geolocator.getCurrentPosition(
-      desiredAccuracy: LocationAccuracy.low,
+      desiredAccuracy: LocationAccuracy.high,
+      timeLimit: const Duration(seconds: 10),
     );
   }
 
@@ -51,6 +53,7 @@ class _PlacesLocatorScreenState extends State<PlacesLocatorScreen> {
 
     try {
       final pos = await _getCurrentPosition();
+      final usingDefault = pos == null;
       final lat = pos?.latitude ?? _defaultLat;
       final lon = pos?.longitude ?? _defaultLon;
 
@@ -63,6 +66,7 @@ class _PlacesLocatorScreenState extends State<PlacesLocatorScreen> {
       );
       setState(() {
         _places = places;
+        _usingDefault = usingDefault;
         _loading = false;
       });
     } catch (e) {
@@ -157,9 +161,32 @@ class _PlacesLocatorScreenState extends State<PlacesLocatorScreen> {
                       onRefresh: _loadPlaces,
                       child: ListView.builder(
                         padding: const EdgeInsets.all(16),
-                        itemCount: _places.length,
+                        itemCount: _places.length + (_usingDefault ? 1 : 0),
                         itemBuilder: (_, index) {
-                          final place = _places[index];
+                          if (_usingDefault && index == 0) {
+                            return Container(
+                              margin: const EdgeInsets.only(bottom: 8),
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: AppTokens.warning.withValues(alpha: 0.12),
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(color: AppTokens.warning.withValues(alpha: 0.3)),
+                              ),
+                              child: const Row(
+                                children: [
+                                  Icon(Icons.location_off, size: 18, color: AppTokens.warning),
+                                  SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      'Using default location. Enable GPS for accurate distances.',
+                                      style: TextStyle(fontFamily: 'Inter', fontSize: 12, color: AppTokens.text),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          }
+                          final place = _places[_usingDefault ? index - 1 : index];
                           return _PlaceCard(place: place);
                         },
                       ),
@@ -228,15 +255,16 @@ class _PlaceCard extends StatelessWidget {
           subtitle: Text('${place.featureType} • $distText'),
           trailing: TextButton(
             onPressed: () async {
-              final url = Uri.parse(
-                'https://www.google.com/maps/dir/?api=1&destination=${place.lat},${place.lon}',
-              );
-              if (await canLaunchUrl(url)) {
-                await launchUrl(url, mode: LaunchMode.externalApplication);
+              final geoUri = Uri.parse('geo:0,0?q=${place.lat},${place.lon}(${Uri.encodeComponent(place.name)})');
+              final mapsUri = Uri.parse('https://www.google.com/maps/dir/?api=1&destination=${place.lat},${place.lon}');
+              if (await canLaunchUrl(geoUri)) {
+                await launchUrl(geoUri);
+              } else if (await canLaunchUrl(mapsUri)) {
+                await launchUrl(mapsUri, mode: LaunchMode.externalApplication);
               } else {
                 if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Could not open maps app.')),
+                    const SnackBar(content: Text('No maps app found. Install Google Maps.')),
                   );
                 }
               }

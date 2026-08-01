@@ -175,18 +175,17 @@ class _EmergencyScreenState extends State<EmergencyScreen> {
           subtitle: Text('${place.featureType} • $distText'),
           trailing: TextButton(
             onPressed: () async {
-              final url = Uri.parse(
-                'https://www.google.com/maps/dir/?api=1&destination=${place.lat},${place.lon}',
-              );
-              if (await canLaunchUrl(url)) {
-                await launchUrl(url, mode: LaunchMode.externalApplication);
+              final geoUri = Uri.parse('geo:0,0?q=${place.lat},${place.lon}(${Uri.encodeComponent(place.name)})');
+              final mapsUri = Uri.parse('https://www.google.com/maps/dir/?api=1&destination=${place.lat},${place.lon}');
+              if (await canLaunchUrl(geoUri)) {
+                await launchUrl(geoUri);
+              } else if (await canLaunchUrl(mapsUri)) {
+                await launchUrl(mapsUri, mode: LaunchMode.externalApplication);
               } else {
                 if (!mounted) return;
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Could not open maps app.')),
-                  );
-                }
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('No maps app found. Install Google Maps.')),
+                );
               }
             },
             child: const Text('Route'),

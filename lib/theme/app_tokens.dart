@@ -4,6 +4,7 @@ class AppTokens {
   static const surface = Color(0xFFF8FAFC);
   static const text = Color(0xFF0F172A);
   static const accent = Color(0xFF0F766E);
+  static const warning = Color(0xFFD97706);
   static const border = Color(0xFFF1F5F9);
   static const radius = 16.0;
 

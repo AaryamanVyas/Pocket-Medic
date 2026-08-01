@@ -66,5 +66,15 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<key>NSCameraUsageDescription</key>
+	<string>Pocket Medic needs camera access to capture photos for plant, wound, and animal identification.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Pocket Medic needs microphone access for voice input.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Pocket Medic needs your location to find nearby hospitals, police, and water sources.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Pocket Medic needs photo library access to save and select images.</string>
+	<key>NSPhoneUsageDescription</key>
+	<string>Pocket Medic needs phone access to call emergency services.</string>
 </dict>
 </plist>

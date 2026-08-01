@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../theme/app_tokens.dart';
 import '../models/place.dart';
@@ -27,19 +28,32 @@ class _EmergencyScreenState extends State<EmergencyScreen> {
 
   Future<void> _loadEmergencyPlaces() async {
     try {
+      double lat = _defaultLat;
+      double lon = _defaultLon;
+
+      try {
+        bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+        if (serviceEnabled) {
+          LocationPermission permission = await Geolocator.checkPermission();
+          if (permission == LocationPermission.denied) {
+            permission = await Geolocator.requestPermission();
+          }
+          if (permission != LocationPermission.denied &&
+              permission != LocationPermission.deniedForever) {
+            final pos = await Geolocator.getCurrentPosition(
+              locationSettings: const LocationSettings(accuracy: LocationAccuracy.low),
+            );
+            lat = pos.latitude;
+            lon = pos.longitude;
+          }
+        }
+      } catch (_) {}
+
       final hospitals = await OsmService.findByType(
-        lat: _defaultLat,
-        lon: _defaultLon,
-        featureType: 'hospital',
-        radiusKm: 50,
-        limit: 5,
+        lat: lat, lon: lon, featureType: 'hospital', radiusKm: 50, limit: 5,
       );
       final police = await OsmService.findByType(
-        lat: _defaultLat,
-        lon: _defaultLon,
-        featureType: 'police',
-        radiusKm: 50,
-        limit: 5,
+        lat: lat, lon: lon, featureType: 'police', radiusKm: 50, limit: 5,
       );
       setState(() {
         _hospitals = hospitals;

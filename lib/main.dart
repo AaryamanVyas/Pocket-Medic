@@ -3,12 +3,13 @@ import 'theme/app_tokens.dart';
 import 'screens/main_shell.dart';
 import 'services/history_store.dart';
 import 'services/ai_service.dart';
+import 'services/permission_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await PermissionService.requestAll();
   await HistoryStore.load();
   await AiService.initialize();
-  // Attempt to load model in background
   AiService.loadModel();
   runApp(const PocketMedicApp());
 }

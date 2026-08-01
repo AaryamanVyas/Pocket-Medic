@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
 import '../theme/app_tokens.dart';
 import '../models/place.dart';
 import '../services/osm_service.dart';
@@ -15,8 +16,8 @@ class _PlacesLocatorScreenState extends State<PlacesLocatorScreen> {
   bool _loading = true;
   String? _error;
   String? _selectedType;
+  Position? _currentPosition;
 
-  // Default to Chennai area if no GPS
   static const _defaultLat = 13.0827;
   static const _defaultLon = 80.2707;
 
@@ -26,6 +27,22 @@ class _PlacesLocatorScreenState extends State<PlacesLocatorScreen> {
     _loadPlaces();
   }
 
+  Future<Position?> _getCurrentPosition() async {
+    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) return null;
+
+    LocationPermission permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) return null;
+    }
+    if (permission == LocationPermission.deniedForever) return null;
+
+    return await Geolocator.getCurrentPosition(
+      locationSettings: const LocationSettings(accuracy: LocationAccuracy.low),
+    );
+  }
+
   Future<void> _loadPlaces() async {
     setState(() {
       _loading = true;
@@ -33,9 +50,14 @@ class _PlacesLocatorScreenState extends State<PlacesLocatorScreen> {
     });
 
     try {
+      final pos = await _getCurrentPosition();
+      _currentPosition = pos;
+      final lat = pos?.latitude ?? _defaultLat;
+      final lon = pos?.longitude ?? _defaultLon;
+
       final places = await OsmService.findNearby(
-        lat: _defaultLat,
-        lon: _defaultLon,
+        lat: lat,
+        lon: lon,
         radiusKm: 50.0,
         featureType: _selectedType,
         limit: 20,

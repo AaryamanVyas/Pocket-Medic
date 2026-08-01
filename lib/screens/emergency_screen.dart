@@ -173,6 +173,24 @@ class _EmergencyScreenState extends State<EmergencyScreen> {
             style: const TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.w600),
           ),
           subtitle: Text('${place.featureType} • $distText'),
+          trailing: TextButton(
+            onPressed: () async {
+              final url = Uri.parse(
+                'https://www.google.com/maps/dir/?api=1&destination=${place.lat},${place.lon}',
+              );
+              if (await canLaunchUrl(url)) {
+                await launchUrl(url, mode: LaunchMode.externalApplication);
+              } else {
+                if (!mounted) return;
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Could not open maps app.')),
+                  );
+                }
+              }
+            },
+            child: const Text('Route'),
+          ),
         ),
       ),
     );

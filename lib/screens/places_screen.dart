@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../theme/app_tokens.dart';
 import '../models/place.dart';
 import '../services/osm_service.dart';
@@ -226,10 +227,19 @@ class _PlaceCard extends StatelessWidget {
           ),
           subtitle: Text('${place.featureType} • $distText'),
           trailing: TextButton(
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Route to ${place.name} (stub).')),
+            onPressed: () async {
+              final url = Uri.parse(
+                'https://www.google.com/maps/dir/?api=1&destination=${place.lat},${place.lon}',
               );
+              if (await canLaunchUrl(url)) {
+                await launchUrl(url, mode: LaunchMode.externalApplication);
+              } else {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Could not open maps app.')),
+                  );
+                }
+              }
             },
             child: const Text('Route'),
           ),

@@ -1,5 +1,7 @@
 import 'dart:io';
 import 'dart:math';
+import 'package:flutter/services.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
@@ -7,6 +9,7 @@ import '../models/place.dart';
 
 class OsmService {
   static Database? _database;
+  static bool _copyFailed = false;
 
   static Future<Database> get database async {
     if (_database != null) return _database!;
@@ -22,13 +25,37 @@ class OsmService {
     if (!await destFile.exists()) {
       final assetPath = await _findSourceDb();
       if (assetPath != null) {
-        await File(assetPath).copy(destPath);
+        try {
+          await File(assetPath).copy(destPath);
+        } on PlatformException {
+          _copyFailed = true;
+        } catch (e) {
+          if (e.toString().contains('Permission denied') ||
+              e.toString().contains('PathAccessException')) {
+            _copyFailed = true;
+          } else {
+            rethrow;
+          }
+        }
       } else {
-        throw Exception('survival.sqlite not found. Place it in Downloads folder.');
+        _copyFailed = true;
       }
     }
 
+    if (_copyFailed) {
+      throw Exception(
+        'Permission denied. Please grant "All Files Access" in Settings, '
+        'then restart the app.',
+      );
+    }
+
     return await openDatabase(destPath, readOnly: true);
+  }
+
+  static bool get needsPermission => _copyFailed;
+
+  static Future<void> openSettings() async {
+    await openAppSettings();
   }
 
   static Future<String?> _findSourceDb() async {

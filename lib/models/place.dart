@@ -5,6 +5,7 @@ class Place {
   final double lat;
   final double lon;
   final double? distanceKm;
+  final double? bearing;
 
   const Place({
     this.id,
@@ -13,6 +14,7 @@ class Place {
     required this.lat,
     required this.lon,
     this.distanceKm,
+    this.bearing,
   });
 
   factory Place.fromMap(Map<String, dynamic> map) {
@@ -23,6 +25,7 @@ class Place {
       lat: (map['lat'] as num).toDouble(),
       lon: (map['lon'] as num).toDouble(),
       distanceKm: map['distance_km'] as double?,
+      bearing: map['bearing'] as double?,
     );
   }
 }

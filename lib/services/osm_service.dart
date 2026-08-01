@@ -10,6 +10,7 @@ import '../models/place.dart';
 class OsmService {
   static Database? _database;
   static bool _copyFailed = false;
+  static String? _customDbPath;
 
   static Future<Database> get database async {
     if (_database != null) return _database!;
@@ -17,9 +18,22 @@ class OsmService {
     return _database!;
   }
 
+  static void setDatabasePath(String path) {
+    _customDbPath = path;
+    _database?.close();
+    _database = null;
+  }
+
   static Future<Database> _initDatabase() async {
+    String destPath;
+
+    if (_customDbPath != null && File(_customDbPath!).existsSync()) {
+      destPath = _customDbPath!;
+      return await openDatabase(destPath, readOnly: true);
+    }
+
     final appDir = await getApplicationDocumentsDirectory();
-    final destPath = join(appDir.path, 'survival.sqlite');
+    destPath = join(appDir.path, 'survival.sqlite');
     final destFile = File(destPath);
 
     if (!await destFile.exists()) {
@@ -118,6 +132,7 @@ class OsmService {
         lat: pLat,
         lon: pLon,
         distanceKm: _haversine(lat, lon, pLat, pLon),
+        bearing: _bearing(lat, lon, pLat, pLon),
       );
     }).toList();
 
@@ -151,5 +166,24 @@ class OsmService {
     return earthRadius * c;
   }
 
+  static double _bearing(double lat1, double lon1, double lat2, double lon2) {
+    final dLon = _toRad(lon2 - lon1);
+    final y = sin(dLon) * cos(_toRad(lat2));
+    final x = cos(_toRad(lat1)) * sin(_toRad(lat2)) -
+        sin(_toRad(lat1)) * cos(_toRad(lat2)) * cos(dLon);
+    return (_toDeg(atan2(y, x)) + 360) % 360;
+  }
+
   static double _toRad(double deg) => deg * pi / 180.0;
+  static double _toDeg(double rad) => rad * 180.0 / pi;
+
+  static String bearingToCompass(double bearing) {
+    const dirs = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
+    return dirs[(bearing / 45).round() % 8];
+  }
+
+  static String bearingToArrow(double bearing) {
+    const arrows = ['↑', '↗', '→', '↘', '↓', '↙', '←', '↖'];
+    return arrows[(bearing / 45).round() % 8];
+  }
 }

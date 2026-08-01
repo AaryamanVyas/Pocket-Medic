@@ -126,8 +126,11 @@ def classify_tags(tags: Mapping[str, str]) -> Optional[str]:
     ):
         return "trail"
 
-    if highway in ROAD_HIGHWAYS:
-        return "road"
+    # Trails are critical for survival navigation (finding paths when lost).
+    # Roads are skipped — motorized roads are visible/obvious and don't help
+    # someone lost in wilderness, but they bloat the DB to 429MB (86.8% of rows).
+    # if highway in ROAD_HIGHWAYS:
+    #     return "road"
 
     return None
 

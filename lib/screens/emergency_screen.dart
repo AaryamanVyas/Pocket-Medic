@@ -163,6 +163,11 @@ class _EmergencyScreenState extends State<EmergencyScreen> {
             : '${dist.toStringAsFixed(1)} km'
         : '';
 
+    final bearing = place.bearing;
+    final compassText = bearing != null
+        ? '${OsmService.bearingToArrow(bearing)} ${OsmService.bearingToCompass(bearing)}'
+        : '';
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Card(
@@ -172,7 +177,12 @@ class _EmergencyScreenState extends State<EmergencyScreen> {
             place.name,
             style: const TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.w600),
           ),
-          subtitle: Text('${place.featureType} • $distText'),
+          subtitle: Text(
+            bearing != null
+                ? '$compassText • ${place.featureType} • $distText'
+                : '${place.featureType} • $distText',
+            style: const TextStyle(fontFamily: 'Inter', fontSize: 12),
+          ),
           trailing: TextButton(
             onPressed: () async {
               final geoUri = Uri.parse('geo:0,0?q=${place.lat},${place.lon}(${Uri.encodeComponent(place.name)})');

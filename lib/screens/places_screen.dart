@@ -16,7 +16,6 @@ class _PlacesLocatorScreenState extends State<PlacesLocatorScreen> {
   bool _loading = true;
   String? _error;
   String? _selectedType;
-  Position? _currentPosition;
 
   static const _defaultLat = 13.0827;
   static const _defaultLon = 80.2707;
@@ -39,7 +38,7 @@ class _PlacesLocatorScreenState extends State<PlacesLocatorScreen> {
     if (permission == LocationPermission.deniedForever) return null;
 
     return await Geolocator.getCurrentPosition(
-      locationSettings: const LocationSettings(accuracy: LocationAccuracy.low),
+      desiredAccuracy: LocationAccuracy.low,
     );
   }
 
@@ -51,7 +50,6 @@ class _PlacesLocatorScreenState extends State<PlacesLocatorScreen> {
 
     try {
       final pos = await _getCurrentPosition();
-      _currentPosition = pos;
       final lat = pos?.latitude ?? _defaultLat;
       final lon = pos?.longitude ?? _defaultLon;
 
@@ -115,9 +113,9 @@ class _PlacesLocatorScreenState extends State<PlacesLocatorScreen> {
                       children: [
                         const Icon(Icons.error_outline, size: 48, color: AppTokens.text),
                         const SizedBox(height: 16),
-                        Text(
+                        const Text(
                           'Could not load places',
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontFamily: 'Inter',
                             fontWeight: FontWeight.w600,
                             fontSize: 16,
@@ -197,7 +195,7 @@ class _PlaceCard extends StatelessWidget {
       case 'lake':
         return Icons.water_drop_outlined;
       case 'campsite':
-        return Icons.camping;
+        return Icons.cabin_outlined;
       case 'shelter':
         return Icons.home_outlined;
       case 'road':

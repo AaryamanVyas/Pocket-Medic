@@ -41,7 +41,7 @@ class _EmergencyScreenState extends State<EmergencyScreen> {
           if (permission != LocationPermission.denied &&
               permission != LocationPermission.deniedForever) {
             final pos = await Geolocator.getCurrentPosition(
-              locationSettings: const LocationSettings(accuracy: LocationAccuracy.low),
+              desiredAccuracy: LocationAccuracy.low,
             );
             lat = pos.latitude;
             lon = pos.longitude;
@@ -167,7 +167,7 @@ class _EmergencyScreenState extends State<EmergencyScreen> {
       padding: const EdgeInsets.only(bottom: 8),
       child: Card(
         child: ListTile(
-          leading: Icon(Icons.local_hospital, color: AppTokens.accent),
+          leading: const Icon(Icons.local_hospital, color: AppTokens.accent),
           title: Text(
             place.name,
             style: const TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.w600),

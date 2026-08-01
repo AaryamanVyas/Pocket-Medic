@@ -259,7 +259,7 @@ class DashboardScreen extends StatelessWidget {
                             fontFamily: 'Inter',
                             fontWeight: FontWeight.w500,
                             fontSize: 12,
-                            color: AppTokens.text.withOpacity(0.6),
+                            color: AppTokens.text.withValues(alpha: 0.6),
                           ),
                         ),
                       ],

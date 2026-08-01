@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:speech_to_text/speech_to_text.dart';
 import '../theme/app_tokens.dart';
-import '../models/ask_response.dart';
 import '../services/ai_service.dart';
 import 'ask_result.dart';
 
@@ -83,8 +82,9 @@ class _AskFormBodyState extends State<AskFormBody> {
           _queryController.text = result.recognizedWords;
         }
       },
-      listenFor: const Duration(seconds: 30),
-      pauseFor: const Duration(seconds: 3),
+      listenOptions: SpeechListenOptions(
+        listenMode: ListenMode.dictation,
+      ),
     );
     setState(() => _isListening = false);
   }

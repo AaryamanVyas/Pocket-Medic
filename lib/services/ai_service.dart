@@ -3,11 +3,12 @@ import 'package:flutter_gemma/flutter_gemma.dart';
 import 'package:flutter_gemma_litertlm/flutter_gemma_litertlm.dart';
 import 'package:path_provider/path_provider.dart';
 import '../models/ask_response.dart';
+import '../theme/app_tokens.dart';
 
 class AiService {
   static bool _initialized = false;
   static bool _modelReady = false;
-  static Chat? _chat;
+  static InferenceChat? _chat;
 
   static bool get isReady => _modelReady;
 
@@ -15,7 +16,7 @@ class AiService {
     if (_initialized) return;
 
     await FlutterGemma.initialize(
-      inferenceEngines: [LiteRtLmEngine()],
+      inferenceEngines: const [LiteRtLmEngine()],
     );
 
     _initialized = true;
@@ -29,7 +30,7 @@ class AiService {
 
       if (!await modelFile.exists()) {
         // Try to find it in Downloads
-        final downloadPath = '/storage/emulated/0/Download/gemma-4-E2B-it.litertlm';
+        const downloadPath = '/storage/emulated/0/Download/gemma-4-E2B-it.litertlm';
         final downloadFile = File(downloadPath);
         if (await downloadFile.exists()) {
           await downloadFile.copy(modelPath);
@@ -55,7 +56,6 @@ class AiService {
 
     final model = await FlutterGemma.getActiveModel(
       maxTokens: 4096,
-      preferredBackend: PreferredBackend.gpu,
     );
 
     _chat = await model.createChat(temperature: 0.7, topK: 1);
@@ -85,9 +85,11 @@ class AiService {
         isUser: true,
       ));
 
-      final response = await _chat!.generateChatResponse();
-
-      return _parseModelResponse(response, category, query, hasImage);
+      final modelResponse = await _chat!.generateChatResponse();
+      if (modelResponse is TextResponse) {
+        return _parseModelResponse(modelResponse.token, category, query, hasImage);
+      }
+      return _parseModelResponse(modelResponse.toString(), category, query, hasImage);
     } catch (e) {
       // Fallback to mock if model fails
       return MockAskResponse.fromInput(

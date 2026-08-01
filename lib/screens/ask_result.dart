@@ -36,9 +36,9 @@ class AskResultScreen extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
                     decoration: BoxDecoration(
-                      color: color.withOpacity(0.12),
+                      color: color.withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(AppTokens.radius),
-                      border: Border.all(color: color.withOpacity(0.35)),
+                      border: Border.all(color: color.withValues(alpha: 0.35)),
                     ),
                     child: Text(
                       'Urgency: ${response.urgency.toUpperCase()}',
@@ -195,9 +195,9 @@ class AskResultScreen extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.08),
+        color: color.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(AppTokens.radius),
-        border: Border.all(color: color.withOpacity(0.3)),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
       child: Row(
         children: [

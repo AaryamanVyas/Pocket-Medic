@@ -3,7 +3,6 @@ import 'package:flutter_gemma/flutter_gemma.dart';
 import 'package:flutter_gemma_litertlm/flutter_gemma_litertlm.dart';
 import 'package:path_provider/path_provider.dart';
 import '../models/ask_response.dart';
-import '../theme/app_tokens.dart';
 
 class AiService {
   static bool _initialized = false;
@@ -81,7 +80,7 @@ class AiService {
       final systemPrompt = _buildSystemPrompt(category);
       final userMessage = _buildUserPrompt(category, query, hasImage);
 
-      await _chat!.addQueryChunk(Message(
+      await _chat!.addQueryChunk(Message.text(
         text: '$systemPrompt\n\n$userMessage',
         isUser: true,
       ));

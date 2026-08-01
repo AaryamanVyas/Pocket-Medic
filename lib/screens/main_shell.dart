@@ -4,6 +4,9 @@ import '../services/ai_service.dart';
 import 'ask_screen.dart';
 import 'places_screen.dart';
 import 'emergency_screen.dart';
+import 'field_guides.dart';
+import 'history_screen.dart';
+import 'settings_screen.dart';
 
 class MainShell extends StatefulWidget {
   const MainShell({super.key});

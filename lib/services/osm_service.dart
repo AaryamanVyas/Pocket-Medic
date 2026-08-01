@@ -98,6 +98,22 @@ class OsmService {
     return places.take(limit).toList();
   }
 
+  static Future<List<Place>> findByType({
+    required double lat,
+    required double lon,
+    required String featureType,
+    double radiusKm = 50.0,
+    int limit = 10,
+  }) async {
+    return findNearby(
+      lat: lat,
+      lon: lon,
+      radiusKm: radiusKm,
+      featureType: featureType,
+      limit: limit,
+    );
+  }
+
   static double _haversine(double lat1, double lon1, double lat2, double lon2) {
     const earthRadius = 6371.0;
     final dLat = _toRad(lat2 - lat1);

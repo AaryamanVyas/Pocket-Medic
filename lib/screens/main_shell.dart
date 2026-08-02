@@ -7,6 +7,8 @@ import 'emergency_screen.dart';
 import 'field_guides.dart';
 import 'history_screen.dart';
 import 'settings_screen.dart';
+import 'map_screen.dart';
+import 'region_picker_screen.dart';
 
 class MainShell extends StatefulWidget {
   const MainShell({super.key});
@@ -37,6 +39,16 @@ class _MainShellState extends State<MainShell> {
         onOpenEmergency: () {
           Navigator.of(context).push(
             MaterialPageRoute(builder: (_) => const EmergencyScreen()),
+          );
+        },
+        onOpenMap: () {
+          Navigator.of(context).push(
+            MaterialPageRoute(builder: (_) => const MapScreen()),
+          );
+        },
+        onOpenRegions: () {
+          Navigator.of(context).push(
+            MaterialPageRoute(builder: (_) => const RegionPickerScreen()),
           );
         },
       ),
@@ -72,12 +84,16 @@ class DashboardScreen extends StatelessWidget {
   final void Function(AskCategory category) onOpenAsk;
   final VoidCallback onOpenPlaces;
   final VoidCallback onOpenEmergency;
+  final VoidCallback onOpenMap;
+  final VoidCallback onOpenRegions;
 
   const DashboardScreen({
     super.key,
     required this.onOpenAsk,
     required this.onOpenPlaces,
     required this.onOpenEmergency,
+    required this.onOpenMap,
+    required this.onOpenRegions,
   });
 
   @override
@@ -153,6 +169,49 @@ class DashboardScreen extends StatelessWidget {
               Expanded(
                 child: SizedBox(
                   height: 48,
+                  child: FilledButton.icon(
+                    style: FilledButton.styleFrom(
+                      backgroundColor: AppTokens.accent,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(AppTokens.radius),
+                      ),
+                    ),
+                    onPressed: onOpenMap,
+                    icon: const Icon(Icons.map_outlined),
+                    label: const Text(
+                      'Offline Map',
+                      style: TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: SizedBox(
+                  height: 48,
+                  child: OutlinedButton.icon(
+                    style: _outlineStyle(),
+                    onPressed: onOpenRegions,
+                    icon: const Icon(Icons.download_outlined, color: AppTokens.text),
+                    label: const Text(
+                      'Regions',
+                      style: TextStyle(
+                        fontFamily: 'Inter',
+                        fontWeight: FontWeight.w600,
+                        color: AppTokens.text,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Expanded(
+                child: SizedBox(
+                  height: 48,
                   child: OutlinedButton.icon(
                     style: _outlineStyle(),
                     onPressed: onOpenEmergency,
@@ -177,7 +236,7 @@ class DashboardScreen extends StatelessWidget {
                     onPressed: onOpenPlaces,
                     icon: const Icon(Icons.place_outlined, color: AppTokens.text),
                     label: const Text(
-                      'Places',
+                      'Places List',
                       style: TextStyle(
                         fontFamily: 'Inter',
                         fontWeight: FontWeight.w600,

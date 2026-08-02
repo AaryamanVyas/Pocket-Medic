@@ -76,6 +76,8 @@ def insert_features(
 
     Each row must contain:
       osm_id, osm_type, name, type, latitude, longitude, tags (dict or JSON str)
+    Optional:
+      geometry (list of [lat, lon] pairs for ways)
     """
     if not rows:
         return 0
@@ -96,6 +98,8 @@ def insert_features(
                 tags_json = json.dumps(tags, ensure_ascii=False, separators=(",", ":"))
             else:
                 tags_json = str(tags)
+            geometry = item.get("geometry")
+            geometry_json = json.dumps(geometry, separators=(",", ":")) if geometry else None
             feature_payload.append(
                 (
                     int(item["osm_id"]),
@@ -105,6 +109,7 @@ def insert_features(
                     float(item["latitude"]),
                     float(item["longitude"]),
                     tags_json,
+                    geometry_json,
                 )
             )
 
@@ -112,8 +117,8 @@ def insert_features(
         conn.executemany(
             """
             INSERT OR IGNORE INTO features
-                (osm_id, osm_type, name, type, latitude, longitude, tags_json)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
+                (osm_id, osm_type, name, type, latitude, longitude, tags_json, geometry_json)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             """,
             feature_payload,
         )

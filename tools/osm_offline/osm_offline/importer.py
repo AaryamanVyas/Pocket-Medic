@@ -19,6 +19,7 @@ Pipeline:
 
 from __future__ import annotations
 
+import json
 import sqlite3
 import time
 from datetime import datetime, timezone
@@ -270,6 +271,9 @@ def import_pbf_to_sqlite(
                     stats["skipped_invalid_geom"] += 1
                     continue
 
+                # Store full polyline geometry for ways (trails, rivers, etc.)
+                geometry = [[round(p[0], 7), round(p[1], 7)] for p in points]
+
                 buffer.append(
                     {
                         "osm_id": int(element["id"]),
@@ -279,6 +283,7 @@ def import_pbf_to_sqlite(
                         "latitude": lat,
                         "longitude": lon,
                         "tags": tags,
+                        "geometry": geometry,
                     }
                 )
                 stats["ways_kept"] += 1
@@ -301,7 +306,7 @@ def import_pbf_to_sqlite(
         set_meta(conn, "source_pbf", str(pbf.resolve()))
         set_meta(conn, "imported_at_utc", datetime.now(timezone.utc).isoformat())
         set_meta(conn, "feature_count", str(count))
-        set_meta(conn, "importer_version", "2.1.0-osmiter")
+        set_meta(conn, "importer_version", "3.0.0-osmiter-geometry")
         set_meta(conn, "parser", "osmiter")
         conn.commit()
         _v(f"[import] done feature_count={count:,} elapsed_s={elapsed:.1f}")

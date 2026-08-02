@@ -2,9 +2,10 @@
 SQLite schema for offline survival features.
 
 Design choices:
-  - One `features` table for all point-like representatives of OSM objects.
-  - Ways/areas are stored as a single centroid (lat/lon) so Flutter can do
-    simple nearest queries without a full geometry engine.
+  - One `features` table for all OSM objects.
+  - Nodes store a single point (latitude/longitude).
+  - Ways store their centroid for fast bbox queries PLUS the full polyline
+    geometry in `geometry_json` so Flutter can render trail lines on the map.
   - SQLite R*Tree virtual table (`features_rtree`) accelerates bbox candidate
     lookup for find_nearby / reverse_geocode — fully offline, no SpatiaLite.
   - `tags_json` keeps the original OSM tags for the Flutter UI / AI prompts.
@@ -25,14 +26,15 @@ CREATE TABLE IF NOT EXISTS meta (
 );
 
 CREATE TABLE IF NOT EXISTS features (
-    id          INTEGER PRIMARY KEY AUTOINCREMENT,
-    osm_id      INTEGER NOT NULL,
-    osm_type    TEXT NOT NULL CHECK (osm_type IN ('node', 'way', 'relation')),
-    name        TEXT NOT NULL DEFAULT '',
-    type        TEXT NOT NULL,
-    latitude    REAL NOT NULL,
-    longitude   REAL NOT NULL,
-    tags_json   TEXT NOT NULL DEFAULT '{}',
+    id            INTEGER PRIMARY KEY AUTOINCREMENT,
+    osm_id        INTEGER NOT NULL,
+    osm_type      TEXT NOT NULL CHECK (osm_type IN ('node', 'way', 'relation')),
+    name          TEXT NOT NULL DEFAULT '',
+    type          TEXT NOT NULL,
+    latitude      REAL NOT NULL,
+    longitude     REAL NOT NULL,
+    tags_json     TEXT NOT NULL DEFAULT '{}',
+    geometry_json TEXT DEFAULT NULL,
     UNIQUE (osm_type, osm_id)
 );
 

@@ -85,6 +85,8 @@ class KnowledgeService {
         'content': chunk['content'],
       });
     }
+
+    await db.execute("INSERT INTO knowledge(knowledge) VALUES('rebuild')");
   }
 
   static Future<List<Map<String, dynamic>>> retrieve(String query, {int limit = 3}) async {

@@ -30,25 +30,37 @@ class MushroomClassifier {
       throw StateError('Model not loaded. Call loadModel() first.');
     }
 
-    final image = img.decodeImage(imageFile.readAsBytesSync());
+    final imageBytes = await imageFile.readAsBytes();
+    final image = img.decodeImage(Uint8List.fromList(imageBytes));
     if (image == null) {
       throw Exception('Failed to decode image');
     }
 
     final resized = img.copyResize(image, width: 224, height: 224);
     final input = _imageToNestedList(resized);
-    final output = [List.filled(2, 0)];
+
+    final outputShape = _interpreter!.getOutputTensor(0).shape;
+    final numClasses = outputShape.last;
+    final output = [List<int>.filled(numClasses, 0)];
 
     _interpreter!.run(input, output);
 
-    final probabilities = output[0].map((v) => (v / 255.0).clamp(0.0, 1.0)).toList();
+    List<double> probabilities;
+    if (numClasses == 1) {
+      final raw = output[0][0];
+      final edibleProb = raw / 255.0;
+      probabilities = [edibleProb, 1.0 - edibleProb];
+    } else {
+      probabilities = output[0].map<double>((v) => v / 255.0).toList();
+    }
+
     final maxIdx = probabilities.indexOf(probabilities.reduce((a, b) => a > b ? a : b));
 
     return {
-      'label': _labels.isNotEmpty ? _labels[maxIdx] : 'unknown',
+      'label': _labels.length > maxIdx ? _labels[maxIdx] : 'unknown',
       'confidence': probabilities[maxIdx],
       'probabilities': {
-        for (int i = 0; i < _labels.length; i++)
+        for (int i = 0; i < _labels.length && i < probabilities.length; i++)
           _labels[i]: probabilities[i],
       },
     };

@@ -19,6 +19,9 @@ dependencies:
   flutter_gemma: ^1.4.1
   flutter_gemma_litertlm: ^1.3.1
   image_picker: ^1.0.7
+  tflite_flutter: ^0.9.0
+  tflite_flutter_helper: ^0.2.1
+  image: ^3.0.2
   speech_to_text: ^7.4.0
   url_launcher: ^6.2.2
   flutter_map: ^8.3.1
@@ -32,3 +35,7 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  assets:
+    - assets/mushroom_classifier.tflite
+    - assets/labels.txt
+    - assets/knowledge/knowledge_chunks.json

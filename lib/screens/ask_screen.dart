@@ -4,6 +4,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:speech_to_text/speech_to_text.dart';
 import '../theme/app_tokens.dart';
 import '../services/ai_service.dart';
+import '../services/classifier_service.dart';
 import 'ask_result.dart';
 
 class AskScreen extends StatelessWidget {
@@ -34,6 +35,8 @@ class _AskFormBodyState extends State<AskFormBody> {
   File? _imageFile;
   bool _isAnalyzing = false;
   bool _isListening = false;
+  String? _mushroomResult;
+  bool _isClassifying = false;
 
   @override
   void initState() {
@@ -51,6 +54,7 @@ class _AskFormBodyState extends State<AskFormBody> {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.initialCategory != widget.initialCategory) {
       _category = widget.initialCategory;
+      _mushroomResult = null;
     }
   }
 
@@ -64,8 +68,41 @@ class _AskFormBodyState extends State<AskFormBody> {
   Future<void> _pickImage() async {
     final xFile = await _picker.pickImage(source: ImageSource.camera);
     if (xFile != null) {
-      setState(() => _imageFile = File(xFile.path));
+      setState(() {
+        _imageFile = File(xFile.path);
+        _mushroomResult = null;
+      });
+      if (_category == AskCategory.food) {
+        _runClassifier(xFile.path);
+      }
     }
+  }
+
+  Future<void> _runClassifier(String imagePath) async {
+    if (!MushroomClassifier.isLoaded) {
+      setState(() => _isClassifying = true);
+      try {
+        await MushroomClassifier.loadModel();
+      } catch (_) {
+        setState(() => _isClassifying = false);
+        return;
+      }
+    }
+    setState(() => _isClassifying = true);
+    try {
+      final result = await MushroomClassifier.classify(File(imagePath));
+      final label = result['label'] as String;
+      final confidence = (result['confidence'] as num) * 100;
+      setState(() {
+        _mushroomResult =
+            'Classifier: $label (${confidence.toStringAsFixed(1)}% confidence). This is an AI-based classification and may be inaccurate.';
+      });
+    } catch (_) {
+      setState(() {
+        _mushroomResult = 'Classification failed. The model may not be available.';
+      });
+    }
+    setState(() => _isClassifying = false);
   }
 
   Future<void> _startListening() async {
@@ -137,7 +174,10 @@ class _AskFormBodyState extends State<AskFormBody> {
                       ChoiceChip(
                         label: Text(c.label),
                         selected: _category == c,
-                        onSelected: (_) => setState(() => _category = c),
+                        onSelected: (_) => setState(() {
+                          _category = c;
+                          _mushroomResult = null;
+                        }),
                         selectedColor: const Color(0xFFCCFBF1),
                         labelStyle: const TextStyle(
                           fontFamily: 'Inter',
@@ -254,6 +294,51 @@ class _AskFormBodyState extends State<AskFormBody> {
                     label: Text(_imageFile != null ? 'Retake photo' : 'Take photo'),
                   ),
                 ),
+                if (_isClassifying)
+                  const Padding(
+                    padding: EdgeInsets.only(top: 8),
+                    child: Row(
+                      children: [
+                        SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                        SizedBox(width: 8),
+                        Text('Classifying mushroom...'),
+                      ],
+                    ),
+                  ),
+                if (_mushroomResult != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8),
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFFF3E0).withValues(alpha: 0.5),
+                        borderRadius: BorderRadius.circular(AppTokens.radius),
+                        border: Border.all(color: const Color(0xFFFFC107).withValues(alpha: 0.4)),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.warning_amber_outlined, color: Color(0xFFB45309), size: 20),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              _mushroomResult!,
+                              style: const TextStyle(
+                                fontFamily: 'Inter',
+                                fontWeight: FontWeight.w500,
+                                fontSize: 12,
+                                color: Color(0xFFB45309),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
               ],
             ),
           ),
@@ -316,6 +401,7 @@ class _AskFormBodyState extends State<AskFormBody> {
         ? _category.samplePrompts.first
         : _queryController.text.trim();
     setState(() => _isAnalyzing = true);
+
     final response = await AiService.ask(
       category: _category,
       query: query,

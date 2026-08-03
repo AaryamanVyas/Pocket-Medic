@@ -1,0 +1,92 @@
+[
+  {
+    "id": "rash_001",
+    "category": "rashes",
+    "title": "Common rashes and first aid",
+    "content": "Rashes can be caused by allergies, insect bites, plants, infections, or autoimmune conditions. For mild rashes: clean the area with cool water, apply a cold compress for 10-15 minutes, and avoid scratching. Over-the-counter hydrocortisone cream (1%) can reduce itching. If the rash spreads rapidly, blisters form, or is accompanied by fever, seek medical attention immediately. Do not apply butter, toothpaste, or folk remedies to burns or rashes."
+  },
+  {
+    "id": "rash_002",
+    "category": "rashes",
+    "title": "Poison ivy / poison oak rash",
+    "content": "Contact with poison ivy or poison oak causes an itchy, blistering rash from urushiol oil. Wash the affected skin with soap and cool water within 10 minutes of contact to remove the oil. Launder any clothing or gear that touched the plant. Apply cool compresses and calamine lotion. Oral antihistamines (cetirizine, loratadine) help with itching. Seek medical care if the rash covers a large area, affects the face or genitals, or shows signs of infection (pus, warmth, spreading redness)."
+  },
+  {
+    "id": "bite_001",
+    "category": "bites",
+    "title": "Insect bite first aid",
+    "content": "For most insect bites (mosquito, bee, wasp, ant): remove any stinger by scraping sideways with a flat edge. Wash the area with soap and water. Apply a cold pack or ice wrapped in cloth for 10-15 minutes to reduce swelling. Take an oral antihistamine for itching. Watch for signs of allergic reaction: difficulty breathing, swelling of the face or throat, rapid heartbeat, dizziness — these are medical emergencies, call emergency services immediately."
+  },
+  {
+    "id": "bite_002",
+    "category": "bites",
+    "title": "Tick bite removal and Lyme disease",
+    "content": "To remove a tick: use fine-tipped tweezers, grasp the tick as close to the skin as possible, pull upward with steady even pressure. Do not twist or jerk. Clean the bite area with rubbing alcohol or soap and water. Save the tick in a sealed bag for identification if possible. Watch for the bullseye rash (erythema migrans) in the 3-30 days following the bite. If you develop fever, headache, fatigue, or the rash, seek medical care promptly. Early antibiotic treatment is highly effective."
+  },
+  {
+    "id": "bite_003",
+    "category": "bites",
+    "title": "Spider bite — when to worry",
+    "content": "Most spider bites are harmless and cause only local redness and pain. However, bites from a brown recluse or black widow can be dangerous. Brown recluse: look for a necrotic (dark, sinking) center with a red halo, severe pain, fever, nausea. Black widow: look for two fang marks, muscle cramps, sweating, nausea, high blood pressure. For either suspected dangerous spider bite: clean the area, apply a cool compress, immobilize the bitten limb, and seek medical attention immediately. Do not apply a tourniquet or try to suck out venom."
+  },
+  {
+    "id": "insect_001",
+    "category": "insects",
+    "title": "Avoiding insect encounters in the wild",
+    "content": "Wear long sleeves and pants in wooded or grassy areas. Use insect repellent containing DEET (20-30%) or picaridin on exposed skin. Avoid perfumed products that attract insects. Check your body and clothing for ticks after hiking. Remove standing water near camp to reduce mosquito breeding. If you encounter a swarm of bees or wasps, move away slowly and calmly — do not swat or run. If stung multiple times, seek medical attention even without allergy symptoms."
+  },
+  {
+    "id": "insect_002",
+    "category": "insects",
+    "title": "Bee sting treatment",
+    "content": "After a bee sting: remove the stinger by scraping with a fingernail or flat edge (do not squeeze with tweezers — this releases more venom). Wash with soap and water. Apply a cold pack for 10-15 minutes. Take an oral antihistamine for itching and swelling. Pain can be managed with acetaminophen or ibuprofen. Watch for allergic reaction signs: swelling beyond the sting site, difficulty breathing, hives, dizziness — call emergency services immediately."
+  },
+  {
+    "id": "animal_001",
+    "category": "animals",
+    "title": "Wild animal encounter safety",
+    "content": "Most wild animals want to avoid you. Make noise while hiking to avoid surprising animals. If you encounter a bear: do not run, make yourself look large, speak calmly, back away slowly. If a bear charges, stand your ground (most charges are bluffs). For snakes: step back and give the snake space. Most snakebites occur when people try to kill or handle snakes. If bitten: keep the bitten limb below heart level, immobilize it, do not apply a tourniquet, and seek medical help immediately. Remember: most snakes are not venomous, but treat all bites as potentially dangerous until confirmed otherwise."
+  },
+  {
+    "id": "animal_002",
+    "category": "animals",
+    "title": "Rodent and small animal bites",
+    "content": "Clean the wound thoroughly with soap and running water for at least 5 minutes. Apply an antiseptic (hydrogen peroxide, povidone-iodine). Cover with a sterile bandage. Watch for signs of infection: increasing redness, warmth, swelling, pus, fever. Rodent bites can transmit rabies, tularemia, or rat-bite fever. If the animal was wild or behaving abnormally, seek medical attention for possible rabies post-exposure prophylaxis. Report the bite to local health authorities if required."
+  },
+  {
+    "id": "cook_001",
+    "category": "cooking",
+    "title": "Safe foraging: general rules",
+    "content": "Never eat a wild plant, mushroom, or berry unless you are 100% certain of its identity. When in doubt, do not eat. Follow the universal edibility test only as a last resort in a survival situation: separate the plant into parts (leaf, stem, root, fruit), test each part on the inside of your wrist for 15 minutes, then on your lip for 15 minutes, then place a small piece on your tongue and wait 8 hours. If any reaction occurs (burning, numbness, nausea), do not eat that plant. Even edible plants can cause allergic reactions — eat only a small amount the first time."
+  },
+  {
+    "id": "cook_002",
+    "category": "cooking",
+    "title": "Cooking wild game and foraged food",
+    "content": "Always cook wild game and foraged foods thoroughly. Undercooked meat can harbor parasites and bacteria. Boil foraged plants for at least 5 minutes to reduce potential toxins and parasites. When cooking over an open fire, ensure the fire is hot enough — a good cooking fire has white-hot coals. Use a clean water source for cooking and drinking. Store food away from sleeping areas to avoid attracting wildlife. Hang food at least 10 feet high and 4 feet from tree trunks if bears are in the area."
+  },
+  {
+    "id": "cook_003",
+    "category": "cooking",
+    "title": "Water purification methods",
+    "content": "The safest water purification method is boiling: bring water to a rolling boil for at least 1 minute (3 minutes at high altitude). Chemical treatment with iodine tablets or chlorine dioxide works against most pathogens. Portable filters with a pore size of 0.1 microns or smaller remove bacteria and protozoa but not viruses. UV purifiers (SteriPen) are effective against bacteria, protozoa, and viruses. Never drink untreated water from streams, lakes, or ponds — even clear-looking water can contain parasites like Giardia."
+  },
+  {
+    "id": "cook_004",
+    "category": "cooking",
+    "title": "Edible wild plants identification tips",
+    "content": "Learn the common edible plants in your region before heading into the wild. Key safety rules: avoid plants with milky sap (unless known edible), avoid plants with shiny leaves in groups of three (poison ivy), avoid plants with umbrella-shaped flower clusters (hemlock), avoid any plant with a bitter or soapy taste, avoid mushrooms with white gills, a ring on the stem, or a bulbous base. When foraging mushrooms, always cross-reference with a regional field guide and never rely on a single characteristic for identification."
+  },
+  {
+    "id": "medical_001",
+    "category": "medical",
+    "title": "Basic wound care in the field",
+    "content": "Clean all wounds with running water for at least 5 minutes. Remove any debris with sterilized tweezers. Apply direct pressure with a clean cloth to stop bleeding. Apply antiseptic (povidone-iodine or chlorhexidine) and cover with a sterile bandage. Watch for infection signs: redness spreading from the wound, warmth, swelling, pus, fever. For deep or jagged wounds, seek professional medical attention — they may need stitches. Keep tetanus vaccination up to date (every 10 years)."
+  },
+  {
+    "id": "medical_002",
+    "category": "medical",
+    "title": "Allergic reaction and anaphylaxis",
+    "content": "Mild allergic reactions (localized swelling, itching, hives): take an oral antihistamine (cetirizine, loratadine, diphenhydramine). Apply a cold compress to reduce swelling. Severe allergic reaction (anaphylaxis): difficulty breathing, swelling of the face/tongue/throat, rapid pulse, dizziness, nausea — this is a medical emergency. If the person carries an epinephrine auto-injector (EpiPen), use it immediately. Lay the person flat with legs elevated. Call emergency services. Even if symptoms improve after epinephrine, the person needs hospital evaluation — biphasic reactions can occur hours later."
+  }
+]

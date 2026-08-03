@@ -4,6 +4,7 @@ import 'package:flutter_gemma_litertlm/flutter_gemma_litertlm.dart';
 import 'package:path_provider/path_provider.dart';
 import '../models/ask_response.dart';
 import '../theme/app_tokens.dart';
+import 'knowledge_service.dart';
 
 class AiService {
   static bool _initialized = false;
@@ -29,7 +30,6 @@ class AiService {
       final modelFile = File(modelPath);
 
       if (!await modelFile.exists()) {
-        // Try to find it in Downloads
         const downloadPath = '/storage/emulated/0/Download/gemma-4-E2B-it.litertlm';
         final downloadFile = File(downloadPath);
         if (await downloadFile.exists()) {
@@ -78,7 +78,8 @@ class AiService {
       await _ensureChat();
 
       final systemPrompt = _buildSystemPrompt(category);
-      final userMessage = _buildUserPrompt(category, query, hasImage);
+      final ragContext = await _retrieveRagContext(query, category);
+      final userMessage = _buildUserPrompt(category, query, hasImage, ragContext);
 
       await _chat!.addQueryChunk(Message.text(
         text: '$systemPrompt\n\n$userMessage',
@@ -91,12 +92,28 @@ class AiService {
       }
       return _parseModelResponse(modelResponse.toString(), category, query, hasImage);
     } catch (e) {
-      // Fallback to mock if model fails
       return MockAskResponse.fromInput(
         category: category,
         query: query,
         hasImage: hasImage,
       );
+    }
+  }
+
+  static Future<String> _retrieveRagContext(String query, AskCategory category) async {
+    try {
+      final results = await KnowledgeService.retrieve(query, limit: 3);
+      if (results.isEmpty) return '';
+
+      final buffer = StringBuffer();
+      buffer.writeln('Relevant knowledge from your field guide:');
+      for (final row in results) {
+        buffer.writeln('--- ${row['title']} (${row['category']}) ---');
+        buffer.writeln(row['content']);
+      }
+      return buffer.toString();
+    } catch (_) {
+      return '';
     }
   }
 
@@ -127,6 +144,7 @@ Respond in this exact JSON format:
     AskCategory category,
     String query,
     bool hasImage,
+    String ragContext,
   ) {
     final categoryContext = {
       AskCategory.medical: 'Medical/first-aid question',
@@ -136,9 +154,12 @@ Respond in this exact JSON format:
       AskCategory.locate: 'Location/navigation help',
     };
 
+    final imageNote = hasImage ? 'User has attached a photo.' : '';
+    final contextNote = ragContext.isNotEmpty ? '\n\nContext from field guide:\n$ragContext' : '';
+
     return '''Category: ${categoryContext[category]}
-${hasImage ? 'User has attached a photo.' : ''}
-Query: $query''';
+$imageNote
+Query: $query$contextNote''';
   }
 
   static MockAskResponse _parseModelResponse(
@@ -148,12 +169,10 @@ Query: $query''';
     bool hasImage,
   ) {
     try {
-      // Try to extract JSON from response
       final jsonStart = response.indexOf('{');
       final jsonEnd = response.lastIndexOf('}');
       if (jsonStart >= 0 && jsonEnd > jsonStart) {
         final jsonStr = response.substring(jsonStart, jsonEnd + 1);
-        // Basic JSON parsing without external package
         final urgency = _extractField(jsonStr, 'urgency') ?? 'medium';
         final title = _extractField(jsonStr, 'title') ?? 'AI Guidance';
         final summary = _extractField(jsonStr, 'summary') ?? response;
@@ -173,7 +192,6 @@ Query: $query''';
       }
     } catch (_) {}
 
-    // Fallback: return raw response as summary
     return MockAskResponse(
       urgency: 'medium',
       title: 'AI Guidance',

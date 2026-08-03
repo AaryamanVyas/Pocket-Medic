@@ -66,16 +66,50 @@ class _AskFormBodyState extends State<AskFormBody> {
   }
 
   Future<void> _pickImage() async {
-    final xFile = await _picker.pickImage(source: ImageSource.camera);
-    if (xFile != null) {
-      setState(() {
-        _imageFile = File(xFile.path);
-        _mushroomResult = null;
-      });
-      if (_category == AskCategory.food) {
-        _runClassifier(xFile.path);
-      }
-    }
+    showModalBottomSheet(
+      context: context,
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.camera_alt_outlined),
+              title: const Text('Take photo'),
+              onTap: () async {
+                Navigator.pop(ctx);
+                final xFile = await _picker.pickImage(source: ImageSource.camera);
+                if (xFile != null) {
+                  setState(() {
+                    _imageFile = File(xFile.path);
+                    _mushroomResult = null;
+                  });
+                  if (_category == AskCategory.food) {
+                    _runClassifier(xFile.path);
+                  }
+                }
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library_outlined),
+              title: const Text('Choose from gallery'),
+              onTap: () async {
+                Navigator.pop(ctx);
+                final xFile = await _picker.pickImage(source: ImageSource.gallery);
+                if (xFile != null) {
+                  setState(() {
+                    _imageFile = File(xFile.path);
+                    _mushroomResult = null;
+                  });
+                  if (_category == AskCategory.food) {
+                    _runClassifier(xFile.path);
+                  }
+                }
+              },
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   Future<void> _runClassifier(String imagePath) async {
@@ -291,7 +325,7 @@ class _AskFormBodyState extends State<AskFormBody> {
                     ),
                     onPressed: _pickImage,
                     icon: Icon(_imageFile != null ? Icons.refresh : Icons.add_a_photo_outlined),
-                    label: Text(_imageFile != null ? 'Retake photo' : 'Take photo'),
+                    label: Text(_imageFile != null ? 'Retake photo' : 'Add photo'),
                   ),
                 ),
                 if (_isClassifying)

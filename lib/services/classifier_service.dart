@@ -3,10 +3,26 @@ import 'package:flutter/services.dart';
 import 'package:tflite_flutter/tflite_flutter.dart';
 import 'package:image/image.dart' as img;
 
+class ClassifierResult {
+  final String label;
+  final double confidence;
+  final Map<String, double> probabilities;
+  final bool isUncertain;
+
+  const ClassifierResult({
+    required this.label,
+    required this.confidence,
+    required this.probabilities,
+    required this.isUncertain,
+  });
+}
+
 class MushroomClassifier {
   static Interpreter? _interpreter;
   static List<String> _labels = [];
   static bool _loaded = false;
+
+  static const double uncertainThreshold = 0.65;
 
   static bool get isLoaded => _loaded;
 
@@ -25,13 +41,13 @@ class MushroomClassifier {
     _loaded = true;
   }
 
-  static Future<Map<String, dynamic>> classify(File imageFile) async {
+  static Future<ClassifierResult> classify(File imageFile) async {
     if (!_loaded || _interpreter == null) {
       throw StateError('Model not loaded. Call loadModel() first.');
     }
 
     final imageBytes = await imageFile.readAsBytes();
-    final image = img.decodeImage(Uint8List.fromList(imageBytes));
+    final image = img.decodeImage(imageBytes);
     if (image == null) {
       throw Exception('Failed to decode image');
     }
@@ -39,31 +55,46 @@ class MushroomClassifier {
     final resized = img.copyResize(image, width: 224, height: 224);
     final input = _imageToNestedList(resized);
 
-    final outputShape = _interpreter!.getOutputTensor(0).shape;
-    final numClasses = outputShape.last;
-    final output = [List<int>.filled(numClasses, 0)];
-
-    _interpreter!.run(input, output);
+    final outputTensor = _interpreter!.getOutputTensor(0);
+    final isFloatOutput = outputTensor.type == TensorType.float32 ||
+        outputTensor.type == TensorType.float16;
+    final numClasses = outputTensor.shape.last;
 
     List<double> probabilities;
-    if (numClasses == 1) {
-      final raw = output[0][0];
-      final edibleProb = raw / 255.0;
-      probabilities = [edibleProb, 1.0 - edibleProb];
+
+    if (isFloatOutput) {
+      final output = [List<double>.filled(numClasses, 0.0)];
+      _interpreter!.run(input, output);
+      if (numClasses == 1) {
+        final sigmoidVal = output[0][0];
+        probabilities = [1.0 - sigmoidVal, sigmoidVal];
+      } else {
+        probabilities = output[0];
+      }
     } else {
-      probabilities = output[0].map<double>((v) => v / 255.0).toList();
+      final output = [List<int>.filled(numClasses, 0)];
+      _interpreter!.run(input, output);
+      if (numClasses == 1) {
+        final raw = output[0][0];
+        final sigmoidVal = raw / 255.0;
+        probabilities = [1.0 - sigmoidVal, sigmoidVal];
+      } else {
+        probabilities = output[0].map<double>((v) => v / 255.0).toList();
+      }
     }
 
     final maxIdx = probabilities.indexOf(probabilities.reduce((a, b) => a > b ? a : b));
+    final confidence = probabilities[maxIdx];
 
-    return {
-      'label': _labels.length > maxIdx ? _labels[maxIdx] : 'unknown',
-      'confidence': probabilities[maxIdx],
-      'probabilities': {
+    return ClassifierResult(
+      label: _labels.length > maxIdx ? _labels[maxIdx] : 'unknown',
+      confidence: confidence,
+      probabilities: {
         for (int i = 0; i < _labels.length && i < probabilities.length; i++)
           _labels[i]: probabilities[i],
       },
-    };
+      isUncertain: confidence < uncertainThreshold,
+    );
   }
 
   static List<List<List<List<int>>>> _imageToNestedList(img.Image image) {

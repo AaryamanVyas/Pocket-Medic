@@ -125,11 +125,20 @@ class _AskFormBodyState extends State<AskFormBody> {
     setState(() => _isClassifying = true);
     try {
       final result = await MushroomClassifier.classify(File(imagePath));
-      final label = result['label'] as String;
-      final confidence = (result['confidence'] as num) * 100;
+      final ediblePct = (result.probabilities['edible'] ?? 0) * 100;
+      final poisonPct = (result.probabilities['poisonous'] ?? 0) * 100;
+      final buf = StringBuffer();
+      if (result.isUncertain) {
+        buf.write('UNCERTAIN — ');
+      }
+      buf.write('Edible: ${ediblePct.toStringAsFixed(0)}%  |  Poisonous: ${poisonPct.toStringAsFixed(0)}%');
+      if (result.isUncertain) {
+        buf.write('. Low confidence — do NOT eat based on this result.');
+      } else {
+        buf.write('. AI classification only — always verify with a field guide.');
+      }
       setState(() {
-        _mushroomResult =
-            'Classifier: $label (${confidence.toStringAsFixed(1)}% confidence). This is an AI-based classification and may be inaccurate.';
+        _mushroomResult = buf.toString();
       });
     } catch (_) {
       setState(() {

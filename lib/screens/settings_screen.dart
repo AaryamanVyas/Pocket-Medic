@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../theme/app_tokens.dart';
 import '../services/settings_service.dart';
 import 'emergency_screen.dart';
+import 'storage_management_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -90,6 +91,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ),
                     ],
                   ),
+                );
+              },
+            ),
+          ),
+          Card(
+            child: ListTile(
+              leading: const Icon(Icons.storage_outlined),
+              title: const Text('Storage'),
+              subtitle: const Text('Manage downloaded data'),
+              onTap: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const StorageManagementScreen()),
                 );
               },
             ),

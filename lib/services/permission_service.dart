@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:permission_handler/permission_handler.dart';
 
 class PermissionService {
@@ -9,18 +8,6 @@ class PermissionService {
       Permission.location,
       Permission.phone,
     ].request();
-
-    if (Platform.isAndroid) {
-      await requestManageStorage();
-    }
-  }
-
-  static Future<bool> requestManageStorage() async {
-    if (!await Permission.manageExternalStorage.isGranted) {
-      final status = await Permission.manageExternalStorage.request();
-      return status.isGranted;
-    }
-    return true;
   }
 
   static Future<bool> requestCamera() async {

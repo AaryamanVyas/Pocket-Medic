@@ -3,6 +3,9 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'download_service.dart';
+import 'storage_service.dart';
+import 'logger_service.dart';
 import 'osm_service.dart';
 
 class RegionInfo {
@@ -106,6 +109,14 @@ class RegionService {
     RegionInfo region, {
     void Function(double progress)? onProgress,
   }) async {
+    final storage = await StorageService.getStorageInfo();
+    final downloadSizeBytes = region.totalSizeMb * 1024 * 1024;
+
+    if (storage.freeBytes < downloadSizeBytes) {
+      Logger.error('Not enough storage: ${storage.freeSpaceFormatted} needed', tag: 'RegionService');
+      return false;
+    }
+
     try {
       final dir = await getApplicationDocumentsDirectory();
       final regionDir = Directory('${dir.path}/regions/${region.id}');
@@ -119,31 +130,27 @@ class RegionService {
         return true;
       }
 
-      final url = 'https://raw.githubusercontent.com/pocket-medic/maps/main/${region.id}/survival.sqlite';
-      final request = http.Request('GET', Uri.parse(url));
-      final response = await http.Client().send(request);
+      final url = '${StorageService.regionDownloadBaseUrl}${region.id}/survival.sqlite';
+      final result = await DownloadService.download(
+        url: url,
+        destPath: dbPath,
+        onProgress: onProgress,
+      );
 
-      if (response.statusCode != 200) return false;
-
-      final contentLength = response.contentLength ?? 0;
-      int received = 0;
-      final sink = File(dbPath).openWrite();
-
-      await for (final chunk in response.stream) {
-        sink.add(chunk);
-        received += chunk.length;
-        if (contentLength > 0) {
-          onProgress?.call(received / contentLength);
-        }
+      if (result.success) {
+        _downloadedRegions.add(region.id);
+        await _saveDownloaded();
+        await setActiveRegion(region.id, persist: true);
+        Logger.log('Region ${region.id} downloaded (${StorageService.formatBytes(result.contentLength)})', tag: 'RegionService');
+        return true;
+      } else {
+        lastError = result.errorMessage;
+        Logger.error('Region download failed', tag: 'RegionService', error: result.errorMessage);
+        return false;
       }
-      await sink.close();
-
-      _downloadedRegions.add(region.id);
-      await _saveDownloaded();
-      await setActiveRegion(region.id, persist: true);
-      return true;
     } catch (e) {
       lastError = e.toString();
+      Logger.error('Region download exception', tag: 'RegionService', error: e);
       return false;
     }
   }

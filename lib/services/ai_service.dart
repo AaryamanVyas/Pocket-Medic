@@ -5,7 +5,11 @@ import 'package:path_provider/path_provider.dart';
 import '../models/ask_response.dart';
 import '../theme/app_tokens.dart';
 import 'knowledge_service.dart';
+import 'download_service.dart';
+import 'storage_service.dart';
 import 'logger_service.dart';
+
+typedef ModelDownloadProgress = void Function(double progress);
 
 class AiService {
   static bool _initialized = false;
@@ -15,6 +19,7 @@ class AiService {
 
   static bool get isReady => _modelReady;
   static String? get error => lastError;
+  static String get modelFileName => 'gemma-4-E2B-it.litertlm';
 
   static Future<void> initialize() async {
     if (_initialized) return;
@@ -26,20 +31,56 @@ class AiService {
     _initialized = true;
   }
 
+  static Future<String> _getModelPath() async {
+    final appDir = await getApplicationDocumentsDirectory();
+    return '${appDir.path}/models/gemma-4-E2B-it.litertlm';
+  }
+
+  static Future<bool> isModelDownloaded() async {
+    final modelPath = await _getModelPath();
+    return File(modelPath).exists();
+  }
+
+  static Future<bool> downloadModel({ModelDownloadProgress? onProgress}) async {
+    final storage = await StorageService.getStorageInfo();
+
+    if (!storage.hasEnoughSpaceForModel) {
+      lastError = 'Not enough storage: ${storage.freeSpaceFormatted} available, need ~3GB for model';
+      Logger.error('Insufficient storage for model download', tag: 'AiService');
+      return false;
+    }
+
+    final modelPath = await _getModelPath();
+    final parentDir = Directory(modelPath).parent;
+    if (!await parentDir.exists()) {
+      await parentDir.create(recursive: true);
+    }
+
+    final result = await DownloadService.download(
+      url: StorageService.modelDownloadUrl,
+      destPath: modelPath,
+      expectedSha256: StorageService.modelSha256,
+      onProgress: onProgress,
+    );
+
+    if (result.success) {
+      Logger.log('Model downloaded: ${StorageService.formatBytes(result.contentLength)}', tag: 'AiService');
+      return true;
+    } else {
+      lastError = result.errorMessage;
+      Logger.error('Model download failed', tag: 'AiService', error: result.errorMessage);
+      return false;
+    }
+  }
+
   static Future<bool> loadModel() async {
     try {
-      final appDir = await getApplicationDocumentsDirectory();
-      final modelPath = '${appDir.path}/gemma-4-E2B-it.litertlm';
+      final modelPath = await _getModelPath();
       final modelFile = File(modelPath);
 
       if (!await modelFile.exists()) {
-        const downloadPath = '/storage/emulated/0/Download/gemma-4-E2B-it.litertlm';
-        final downloadFile = File(downloadPath);
-        if (await downloadFile.exists()) {
-          await downloadFile.copy(modelPath);
-        } else {
-          return false;
-        }
+        Logger.log('Model not found at $modelPath', tag: 'AiService');
+        return false;
       }
 
       await FlutterGemma.installModel(
@@ -48,6 +89,7 @@ class AiService {
       ).fromFile(modelPath).install();
 
       _modelReady = true;
+      lastError = null;
       return true;
     } catch (e) {
       lastError = e.toString();
@@ -119,7 +161,8 @@ class AiService {
         buffer.writeln(row['content']);
       }
       return buffer.toString();
-    } catch (_) {
+    } catch (e) {
+      Logger.error('RAG context retrieval failed', tag: 'AiService', error: e);
       return '';
     }
   }

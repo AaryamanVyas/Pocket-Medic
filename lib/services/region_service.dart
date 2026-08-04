@@ -53,6 +53,7 @@ class RegionService {
   static List<RegionInfo>? _catalog;
   static final Set<String> _downloadedRegions = {};
   static String? _activeRegionId;
+  static String? lastError;
 
   static const _builtinRegions = [
     RegionInfo(
@@ -141,7 +142,8 @@ class RegionService {
       await _saveDownloaded();
       await setActiveRegion(region.id, persist: true);
       return true;
-    } catch (_) {
+    } catch (e) {
+      lastError = e.toString();
       return false;
     }
   }

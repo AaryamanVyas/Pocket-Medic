@@ -5,13 +5,16 @@ import 'package:path_provider/path_provider.dart';
 import '../models/ask_response.dart';
 import '../theme/app_tokens.dart';
 import 'knowledge_service.dart';
+import 'logger_service.dart';
 
 class AiService {
   static bool _initialized = false;
   static bool _modelReady = false;
   static InferenceChat? _chat;
+  static String? lastError;
 
   static bool get isReady => _modelReady;
+  static String? get error => lastError;
 
   static Future<void> initialize() async {
     if (_initialized) return;
@@ -47,6 +50,8 @@ class AiService {
       _modelReady = true;
       return true;
     } catch (e) {
+      lastError = e.toString();
+      Logger.error('Model load failed', tag: 'AiService', error: e);
       return false;
     }
   }
@@ -92,6 +97,8 @@ class AiService {
       }
       return _parseModelResponse(modelResponse.toString(), category, query, hasImage);
     } catch (e) {
+      lastError = e.toString();
+      Logger.error('AI ask failed', tag: 'AiService', error: e);
       return MockAskResponse.fromInput(
         category: category,
         query: query,

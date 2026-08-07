@@ -36,9 +36,28 @@ class AiService {
     return '${appDir.path}/models/gemma-4-E2B-it.litertlm';
   }
 
+  /// Returns the first path where the model file exists, or null if not found.
+  static Future<String?> _findExistingModelPath() async {
+    final candidates = [
+      await _getModelPath(),
+      '/storage/emulated/0/Download/$modelFileName',
+      '/storage/emulated/0/Downloads/$modelFileName',
+      '/storage/emulated/0/Download/PocketMedic/$modelFileName',
+      '/storage/emulated/0/Downloads/PocketMedic/$modelFileName',
+      '/sdcard/Download/$modelFileName',
+      '/sdcard/Downloads/$modelFileName',
+    ];
+    for (final path in candidates) {
+      if (await File(path).exists()) {
+        Logger.log('Model found at: $path', tag: 'AiService');
+        return path;
+      }
+    }
+    return null;
+  }
+
   static Future<bool> isModelDownloaded() async {
-    final modelPath = await _getModelPath();
-    return File(modelPath).exists();
+    return (await _findExistingModelPath()) != null;
   }
 
   static Future<bool> downloadModel({ModelDownloadProgress? onProgress}) async {
@@ -75,11 +94,10 @@ class AiService {
 
   static Future<bool> loadModel() async {
     try {
-      final modelPath = await _getModelPath();
-      final modelFile = File(modelPath);
+      final modelPath = await _findExistingModelPath();
 
-      if (!await modelFile.exists()) {
-        Logger.log('Model not found at $modelPath', tag: 'AiService');
+      if (modelPath == null) {
+        Logger.log('Model not found in any known location', tag: 'AiService');
         return false;
       }
 

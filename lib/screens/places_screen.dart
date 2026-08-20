@@ -4,6 +4,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../theme/app_tokens.dart';
 import '../models/place.dart';
 import '../services/osm_service.dart';
+import '../services/region_service.dart';
 
 class PlacesLocatorScreen extends StatefulWidget {
   const PlacesLocatorScreen({super.key});
@@ -18,6 +19,9 @@ class _PlacesLocatorScreenState extends State<PlacesLocatorScreen> {
   String? _error;
   String? _selectedType;
   bool _usingDefault = false;
+  /// Whether the GPS fix was outside the active region and we snapped to centre.
+  bool _usingRegionCenter = false;
+  String? _activeRegionName;
 
   static const _defaultLat = 13.0827;
   static const _defaultLon = 80.2707;
@@ -45,30 +49,90 @@ class _PlacesLocatorScreenState extends State<PlacesLocatorScreen> {
     );
   }
 
+  /// Returns the active [RegionInfo] if one is selected and downloaded,
+  /// otherwise null.
+  RegionInfo? get _activeRegion {
+    final id = RegionService.activeRegionId;
+    if (id == null) return null;
+    try {
+      return RegionService.availableRegions.firstWhere((r) => r.id == id);
+    } catch (_) {
+      return null;
+    }
+  }
+
   Future<void> _loadPlaces() async {
     setState(() {
       _loading = true;
       _error = null;
+      _usingRegionCenter = false;
     });
 
     try {
       final pos = await _getCurrentPosition();
-      final usingDefault = pos == null;
-      final lat = pos?.latitude ?? _defaultLat;
-      final lon = pos?.longitude ?? _defaultLon;
+      bool usingDefault = pos == null;
 
-      final places = await OsmService.findNearby(
-        lat: lat,
-        lon: lon,
-        radiusKm: 50.0,
-        featureType: _selectedType,
-        limit: 20,
-      );
-      setState(() {
-        _places = places;
-        _usingDefault = usingDefault;
-        _loading = false;
-      });
+      double lat = pos?.latitude ?? _defaultLat;
+      double lon = pos?.longitude ?? _defaultLon;
+
+      final region = _activeRegion;
+      bool usingRegionCenter = false;
+
+      if (region != null) {
+        // Check whether the GPS fix (or default) is inside the active region.
+        final insideRegion = lat >= region.minLat &&
+            lat <= region.maxLat &&
+            lon >= region.minLon &&
+            lon <= region.maxLon;
+
+        if (!insideRegion) {
+          // Snap to the region's geographic centre so we only return POIs
+          // that are actually in the downloaded area.
+          lat = region.centerLat;
+          lon = region.centerLon;
+          usingRegionCenter = true;
+        }
+
+        // Radius = half the smaller dimension of the region bounding box,
+        // capped to 100 km so we don't pull everything.
+        final latSpanKm = (region.maxLat - region.minLat) * 111.0;
+        final lonSpanKm = (region.maxLon - region.minLon) *
+            111.0 *
+            (3.14159 / 180.0 * lat).abs().clamp(0.1, 1.0); // rough cos
+        final maxRadius = (latSpanKm.clamp(0, lonSpanKm.clamp(0, 200)) / 2)
+            .clamp(10.0, 100.0);
+
+        final places = await OsmService.findNearby(
+          lat: lat,
+          lon: lon,
+          radiusKm: maxRadius,
+          featureType: _selectedType,
+          limit: 20,
+        );
+        setState(() {
+          _places = places;
+          _usingDefault = usingDefault;
+          _usingRegionCenter = usingRegionCenter;
+          _activeRegionName = region.name;
+          _loading = false;
+        });
+      } else {
+        // No region selected — fall back to 50 km GPS bubble (original behaviour).
+        final places = await OsmService.findNearby(
+          lat: lat,
+          lon: lon,
+          radiusKm: 50.0,
+          featureType: _selectedType,
+          limit: 20,
+        );
+        setState(() {
+          _places = places;
+          _usingDefault = usingDefault;
+          _usingRegionCenter = false;
+          _activeRegionName = null;
+          _loading = false;
+        });
+      }
     } catch (e) {
       setState(() {
         _error = e.toString();
@@ -81,7 +145,7 @@ class _PlacesLocatorScreenState extends State<PlacesLocatorScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Places (offline)'),
+        title: Text(_activeRegionName != null ? 'Places – $_activeRegionName' : 'Places (offline)'),
         actions: [
           PopupMenuButton<String?>(
             icon: const Icon(Icons.filter_list),
@@ -161,9 +225,15 @@ class _PlacesLocatorScreenState extends State<PlacesLocatorScreen> {
                       onRefresh: _loadPlaces,
                       child: ListView.builder(
                         padding: const EdgeInsets.all(16),
-                        itemCount: _places.length + (_usingDefault ? 1 : 0),
+                        itemCount: _places.length +
+                            (_usingDefault ? 1 : 0) +
+                            (_usingRegionCenter ? 1 : 0),
                         itemBuilder: (_, index) {
-                          if (_usingDefault && index == 0) {
+                          // Track how many header banners are before the places.
+                          int banners = 0;
+
+                          if (_usingDefault && index == banners) {
+                            banners++;
                             return Container(
                               margin: const EdgeInsets.only(bottom: 8),
                               padding: const EdgeInsets.all(12),
@@ -186,7 +256,35 @@ class _PlacesLocatorScreenState extends State<PlacesLocatorScreen> {
                               ),
                             );
                           }
-                          final place = _places[_usingDefault ? index - 1 : index];
+                          if (_usingDefault) banners = 1;
+
+                          if (_usingRegionCenter && index == banners) {
+                            return Container(
+                              margin: const EdgeInsets.only(bottom: 8),
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: AppTokens.accent.withValues(alpha: 0.10),
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(color: AppTokens.accent.withValues(alpha: 0.3)),
+                              ),
+                              child: Row(
+                                children: [
+                                  const Icon(Icons.travel_explore, size: 18, color: AppTokens.accent),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      'Your GPS is outside "$_activeRegionName". Showing places from the region centre.',
+                                      style: const TextStyle(fontFamily: 'Inter', fontSize: 12, color: AppTokens.text),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          }
+
+                          final totalBanners =
+                              (_usingDefault ? 1 : 0) + (_usingRegionCenter ? 1 : 0);
+                          final place = _places[index - totalBanners];
                           return _PlaceCard(place: place);
                         },
                       ),
